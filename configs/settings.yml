@@ -1,0 +1,9 @@
+project:
+  name: kalshi-weather-bot
+  timezone: America/New_York
+
+research:
+  decision_hour_local: 12
+  min_edge: 0.03
+  fee_buffer: 0.01
+  slippage_buffer: 0.01

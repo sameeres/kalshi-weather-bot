@@ -1,0 +1,36 @@
+cities:
+  - city_key: nyc
+    city_name: New York City
+    timezone: America/New_York
+    kalshi_series_ticker: KXHIGHNY
+    settlement_source_name: null
+    settlement_station_id: null
+    settlement_station_name: null
+    settlement_source_url: null
+    station_lat: null
+    station_lon: null
+    enabled: true
+
+  - city_key: chicago
+    city_name: Chicago
+    timezone: America/Chicago
+    kalshi_series_ticker: null
+    settlement_source_name: null
+    settlement_station_id: null
+    settlement_station_name: null
+    settlement_source_url: null
+    station_lat: null
+    station_lon: null
+    enabled: false
+
+  - city_key: miami
+    city_name: Miami
+    timezone: America/New_York
+    kalshi_series_ticker: null
+    settlement_source_name: null
+    settlement_station_id: null
+    settlement_station_name: null
+    settlement_source_url: null
+    station_lat: null
+    station_lon: null
+    enabled: false

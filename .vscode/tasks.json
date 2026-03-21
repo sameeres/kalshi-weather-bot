@@ -1,0 +1,20 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Install package (editable)",
+      "type": "shell",
+      "command": "python -m pip install -e .[dev]"
+    },
+    {
+      "label": "Run tests",
+      "type": "shell",
+      "command": "pytest"
+    },
+    {
+      "label": "List configured cities",
+      "type": "shell",
+      "command": "python -m kwb cities list"
+    }
+  ]
+}
