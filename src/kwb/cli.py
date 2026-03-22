@@ -8,7 +8,11 @@ from rich.table import Table
 
 from kwb.ingestion.kalshi_events import ingest_enabled_city_events, ingest_events_for_series
 from kwb.ingestion.kalshi_market_history import ingest_kalshi_market_history_for_enabled_cities
+from kwb.ingestion.climate_normals import ingest_climate_normals_for_enabled_cities
 from kwb.ingestion.weather_history import ingest_weather_history_for_enabled_cities
+from kwb.backtest.evaluate_climatology import ClimatologyEvaluationError, evaluate_climatology_strategy
+from kwb.marts.backtest_dataset import BacktestDatasetBuildError, build_backtest_dataset
+from kwb.models.baseline_climatology import ClimatologyModelError, score_climatology_baseline
 from kwb.mapping.station_candidates import build_station_mapping_report, write_station_mapping_report
 from kwb.mapping.station_mapping import (
     StationMappingValidationError,
@@ -23,11 +27,17 @@ ingest_app = typer.Typer(help="Data ingestion commands")
 station_app = typer.Typer(help="Settlement station mapping commands")
 weather_app = typer.Typer(help="Historical weather ingestion commands")
 kalshi_app = typer.Typer(help="Historical Kalshi market ingestion commands")
+mart_app = typer.Typer(help="Mart builders for backtesting datasets")
+model_app = typer.Typer(help="Baseline research models")
+backtest_app = typer.Typer(help="Research backtests and paper-trading evaluation")
 app.add_typer(cities_app, name="cities")
 app.add_typer(ingest_app, name="ingest")
 app.add_typer(station_app, name="station")
 app.add_typer(weather_app, name="weather")
 app.add_typer(kalshi_app, name="kalshi")
+app.add_typer(mart_app, name="mart")
+app.add_typer(model_app, name="model")
+app.add_typer(backtest_app, name="backtest")
 console = Console()
 
 
@@ -182,6 +192,35 @@ def ingest_weather_history(
     )
 
 
+@weather_app.command("normals")
+def ingest_weather_normals(
+    config_path: str = typer.Option("", help="Optional city config path override."),
+    events_path: str = typer.Option(
+        "",
+        help="Optional staged Kalshi events parquet override for station validation.",
+    ),
+    output_dir: str = typer.Option("", help="Optional output directory override."),
+) -> None:
+    cfg_path = Path(config_path) if config_path else CONFIG_DIR / "cities.yml"
+    evt_path = Path(events_path) if events_path else None
+    out_dir = Path(output_dir) if output_dir else None
+
+    try:
+        outpath, row_count, station_count = ingest_climate_normals_for_enabled_cities(
+            config_path=cfg_path,
+            events_path=evt_path,
+            output_dir=out_dir,
+        )
+    except StationMappingValidationError as exc:
+        console.print(f"[red]Climate normals ingestion failed[/red]\n{exc}")
+        raise typer.Exit(code=1) from exc
+
+    console.print(
+        f"Saved climate normals: {outpath} "
+        f"(rows: {row_count}, stations: {station_count})"
+    )
+
+
 @kalshi_app.command("history")
 def ingest_kalshi_history(
     start_date: str = typer.Option(..., help="Candle start date in YYYY-MM-DD format."),
@@ -204,6 +243,108 @@ def ingest_kalshi_history(
     console.print(
         f"Saved Kalshi history: markets={markets_path} candles={candles_path} "
         f"(date range: {start_date} to {end_date}, interval: {interval})"
+    )
+
+
+@mart_app.command("backtest-dataset")
+def build_backtest_dataset_command(
+    decision_time_local: str = typer.Option(..., help="Local decision time in HH:MM format."),
+    config_path: str = typer.Option("", help="Optional city config path override."),
+    weather_path: str = typer.Option("", help="Optional staged weather_daily parquet override."),
+    normals_path: str = typer.Option("", help="Optional staged weather_normals_daily parquet override."),
+    markets_path: str = typer.Option("", help="Optional staged kalshi_markets parquet override."),
+    candles_path: str = typer.Option("", help="Optional staged kalshi_candles parquet override."),
+    output_dir: str = typer.Option("", help="Optional marts output directory override."),
+) -> None:
+    cfg_path = Path(config_path) if config_path else CONFIG_DIR / "cities.yml"
+    out_dir = Path(output_dir) if output_dir else None
+
+    try:
+        outpath, stats = build_backtest_dataset(
+            decision_time_local=decision_time_local,
+            config_path=cfg_path,
+            weather_path=Path(weather_path) if weather_path else None,
+            normals_path=Path(normals_path) if normals_path else None,
+            markets_path=Path(markets_path) if markets_path else None,
+            candles_path=Path(candles_path) if candles_path else None,
+            output_dir=out_dir,
+        )
+    except BacktestDatasetBuildError as exc:
+        console.print(f"[red]Backtest dataset build failed[/red]\n{exc}")
+        raise typer.Exit(code=1) from exc
+
+    console.print(
+        f"Saved backtest dataset: {outpath} "
+        f"(rows: {stats['rows_written']}, cities: {stats['cities_covered']}, "
+        f"decision time local: {stats['decision_time_local']})"
+    )
+
+
+@model_app.command("climatology-baseline")
+def run_climatology_baseline(
+    backtest_dataset_path: str = typer.Option("", help="Optional backtest_dataset parquet override."),
+    history_path: str = typer.Option("", help="Optional staged weather_daily parquet override."),
+    output_dir: str = typer.Option("", help="Optional scored marts output directory override."),
+    day_window: int = typer.Option(0, help="Day-of-year half-window around month_day for the climatology sample."),
+    min_lookback_samples: int = typer.Option(1, help="Minimum required historical samples to score a row."),
+) -> None:
+    out_dir = Path(output_dir) if output_dir else None
+
+    try:
+        outpath, summary = score_climatology_baseline(
+            backtest_dataset_path=Path(backtest_dataset_path) if backtest_dataset_path else None,
+            history_path=Path(history_path) if history_path else None,
+            output_dir=out_dir,
+            day_window=day_window,
+            min_lookback_samples=min_lookback_samples,
+        )
+    except ClimatologyModelError as exc:
+        console.print(f"[red]Climatology baseline scoring failed[/red]\n{exc}")
+        raise typer.Exit(code=1) from exc
+
+    console.print(
+        f"Saved climatology baseline: {outpath} "
+        f"(rows scored: {summary['rows_scored']}, "
+        f"avg lookback: {summary['average_lookback_sample_size']}, "
+        f"Brier: {summary['brier_score']}, "
+        f"avg edge yes: {summary['average_edge_yes']})"
+    )
+
+
+@backtest_app.command("evaluate-climatology")
+def run_climatology_backtest(
+    scored_dataset_path: str = typer.Option("", help="Optional scored climatology parquet override."),
+    output_dir: str = typer.Option("", help="Optional backtest output directory override."),
+    min_edge: float = typer.Option(0.0, help="Minimum model edge required to take a trade."),
+    min_samples: int = typer.Option(1, help="Minimum lookback sample size required."),
+    min_price: float = typer.Option(0.0, help="Minimum entry price in cents."),
+    max_price: float = typer.Option(100.0, help="Maximum entry price in cents."),
+    contracts: int = typer.Option(1, help="Contracts per selected trade."),
+    fee_per_contract: float = typer.Option(0.0, help="Flat fee per contract in dollars."),
+    allow_no: bool = typer.Option(False, help="Also allow NO-side trades when the NO edge qualifies."),
+) -> None:
+    out_dir = Path(output_dir) if output_dir else None
+
+    try:
+        trades_path, summary_path, summary = evaluate_climatology_strategy(
+            scored_dataset_path=Path(scored_dataset_path) if scored_dataset_path else None,
+            output_dir=out_dir,
+            min_edge=min_edge,
+            min_samples=min_samples,
+            min_price=min_price,
+            max_price=max_price,
+            contracts=contracts,
+            fee_per_contract=fee_per_contract,
+            allow_no=allow_no,
+        )
+    except ClimatologyEvaluationError as exc:
+        console.print(f"[red]Climatology evaluation failed[/red]\n{exc}")
+        raise typer.Exit(code=1) from exc
+
+    console.print(
+        f"Saved climatology evaluation: trades={trades_path} summary={summary_path} "
+        f"(trades: {summary['trades_taken']}, hit rate: {summary['hit_rate']}, "
+        f"avg pnl/trade: {summary['average_pnl_per_trade']}, total net pnl: {summary['total_net_pnl']})"
     )
 
 

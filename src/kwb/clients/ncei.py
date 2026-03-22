@@ -41,3 +41,27 @@ class NCEIClient:
             "offset": offset,
         }
         return self._get("/data", params=params)
+
+    def get_daily_climate_normals(
+        self,
+        station_id: str,
+        start_date: str = "2010-01-01",
+        end_date: str = "2010-12-31",
+        datasetid: str = "NORMAL_DLY",
+        datatypeids: list[str] | None = None,
+        units: str = "metric",
+        limit: int = 1000,
+        offset: int = 1,
+    ) -> dict[str, Any]:
+        params = {
+            "datasetid": datasetid,
+            "stationid": station_id,
+            "startdate": start_date,
+            "enddate": end_date,
+            "units": units,
+            "limit": limit,
+            "offset": offset,
+        }
+        if datatypeids:
+            params["datatypeid"] = datatypeids
+        return self._get("/data", params=params)
