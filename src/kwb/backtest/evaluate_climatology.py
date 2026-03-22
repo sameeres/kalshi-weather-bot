@@ -21,6 +21,8 @@ logger = get_logger(__name__)
 DEFAULT_SCORED_PATH = MARTS_DIR / DEFAULT_SCORED_FILENAME
 DEFAULT_TRADES_FILENAME = "backtest_trades_climatology.parquet"
 DEFAULT_SUMMARY_FILENAME = "backtest_summary_climatology.json"
+PRICING_MODE = "decision_price"
+QUOTE_SOURCE = "decision_price_close"
 
 REQUIRED_SCORED_COLUMNS = {
     "city_key",
@@ -141,6 +143,7 @@ def _evaluate_frame(
                 "chosen_side": selection["chosen_side"],
                 "entry_price": selection["entry_price"],
                 "edge_at_entry": selection["edge_at_entry"],
+                "pricing_mode": PRICING_MODE,
                 "contracts": contracts,
                 "gross_pnl": gross_pnl,
                 "net_pnl": net_pnl,
@@ -268,6 +271,7 @@ def _build_trades_frame(rows: list[dict[str, Any]]) -> pd.DataFrame:
         "chosen_side",
         "entry_price",
         "edge_at_entry",
+        "pricing_mode",
         "contracts",
         "gross_pnl",
         "net_pnl",
@@ -310,10 +314,22 @@ def _summarize_trades(
         total_gross_pnl = round(float(trades_df["gross_pnl"].sum()), 6)
         total_net_pnl = round(float(trades_df["net_pnl"].sum()), 6)
 
+    side_counts = _count_by_column(trades_df, "chosen_side")
+    price_bucket_counts = _bucket_counts(
+        trades_df["entry_price"] if "entry_price" in trades_df else pd.Series(dtype=float),
+        bins=[0, 25, 50, 75, 100],
+        labels=["0-25", "25-50", "50-75", "75-100"],
+    )
+
     return {
+        "pricing_mode": PRICING_MODE,
+        "quote_source": QUOTE_SOURCE,
+        "uses_true_quotes": False,
         "rows_available": rows_available,
         "rows_scored": rows_scored,
         "trades_taken": int(len(trades_df)),
+        "yes_trades_taken": side_counts.get("yes", 0),
+        "no_trades_taken": side_counts.get("no", 0),
         "hit_rate": hit_rate,
         "average_edge_at_entry": average_edge_at_entry,
         "average_pnl_per_trade": average_pnl_per_trade,
@@ -321,6 +337,7 @@ def _summarize_trades(
         "total_net_pnl": total_net_pnl,
         "brier_score": float(scored_summary["brier_score"]),
         "average_lookback_sample_size": float(scored_summary["average_lookback_sample_size"]),
+        "entry_price_bucket_counts": price_bucket_counts,
         "allow_no": allow_no,
         "min_edge": min_edge,
         "min_samples": min_samples,
@@ -371,3 +388,17 @@ def _load_scored_frame(path: Path) -> pd.DataFrame:
     if missing:
         raise ClimatologyEvaluationError(f"Required columns are missing from {path}: {', '.join(missing)}")
     return frame.copy()
+
+
+def _count_by_column(df: pd.DataFrame, column: str) -> dict[str, int]:
+    if df.empty or column not in df.columns:
+        return {}
+    return {str(key): int(value) for key, value in df[column].value_counts(dropna=False).to_dict().items()}
+
+
+def _bucket_counts(series: pd.Series, bins: list[float], labels: list[str]) -> dict[str, int]:
+    if series.empty:
+        return {label: 0 for label in labels}
+    bucketed = pd.cut(series.astype(float), bins=bins, labels=labels, include_lowest=True, right=True)
+    counts = bucketed.value_counts(sort=False, dropna=False)
+    return {label: int(counts.get(label, 0)) for label in labels}

@@ -232,6 +232,7 @@ def test_trade_output_schema_contains_required_columns(
         "chosen_side",
         "entry_price",
         "edge_at_entry",
+        "pricing_mode",
         "contracts",
         "gross_pnl",
         "net_pnl",
@@ -298,6 +299,10 @@ def test_summary_json_is_written(
 
     payload = json.loads(captured["text"])
     assert payload["trades_taken"] == 2
+    assert payload["pricing_mode"] == "decision_price"
+    assert payload["quote_source"] == "decision_price_close"
+    assert payload["uses_true_quotes"] is False
+    assert payload["yes_trades_taken"] == 2
     assert "brier_score" in payload
 
 

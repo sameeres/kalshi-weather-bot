@@ -11,8 +11,24 @@ from kwb.ingestion.kalshi_market_history import ingest_kalshi_market_history_for
 from kwb.ingestion.climate_normals import ingest_climate_normals_for_enabled_cities
 from kwb.ingestion.weather_history import ingest_weather_history_for_enabled_cities
 from kwb.backtest.evaluate_climatology import ClimatologyEvaluationError, evaluate_climatology_strategy
+from kwb.backtest.evaluate_climatology_executable import (
+    ClimatologyExecutableEvaluationError,
+    evaluate_climatology_executable_strategy,
+)
+from kwb.backtest.compare_climatology_pricing import (
+    ClimatologyPricingComparisonError,
+    compare_climatology_pricing_modes,
+)
+from kwb.backtest.walkforward_climatology import (
+    WalkforwardClimatologyError,
+    run_walkforward_climatology,
+)
 from kwb.marts.backtest_dataset import BacktestDatasetBuildError, build_backtest_dataset
 from kwb.models.baseline_climatology import ClimatologyModelError, score_climatology_baseline
+from kwb.research.run_climatology_baseline import (
+    ClimatologyResearchRunError,
+    run_climatology_baseline_research,
+)
 from kwb.mapping.station_candidates import build_station_mapping_report, write_station_mapping_report
 from kwb.mapping.station_mapping import (
     StationMappingValidationError,
@@ -30,6 +46,7 @@ kalshi_app = typer.Typer(help="Historical Kalshi market ingestion commands")
 mart_app = typer.Typer(help="Mart builders for backtesting datasets")
 model_app = typer.Typer(help="Baseline research models")
 backtest_app = typer.Typer(help="Research backtests and paper-trading evaluation")
+research_app = typer.Typer(help="Reproducible research pipeline commands")
 app.add_typer(cities_app, name="cities")
 app.add_typer(ingest_app, name="ingest")
 app.add_typer(station_app, name="station")
@@ -38,6 +55,7 @@ app.add_typer(kalshi_app, name="kalshi")
 app.add_typer(mart_app, name="mart")
 app.add_typer(model_app, name="model")
 app.add_typer(backtest_app, name="backtest")
+app.add_typer(research_app, name="research")
 console = Console()
 
 
@@ -346,6 +364,261 @@ def run_climatology_backtest(
         f"(trades: {summary['trades_taken']}, hit rate: {summary['hit_rate']}, "
         f"avg pnl/trade: {summary['average_pnl_per_trade']}, total net pnl: {summary['total_net_pnl']})"
     )
+
+
+@backtest_app.command("evaluate-climatology-executable")
+def run_climatology_executable_backtest(
+    input: str = typer.Option("", help="Optional scored climatology parquet override."),
+    output: str = typer.Option("", help="Optional executable trades parquet output override."),
+    summary_output: str = typer.Option("", help="Optional executable summary JSON output override."),
+    min_edge: float = typer.Option(0.0, help="Minimum executable edge required to take a trade."),
+    min_samples: int = typer.Option(1, help="Minimum lookback sample size required."),
+    min_price: float = typer.Option(0.0, help="Minimum executable entry price in cents."),
+    max_price: float = typer.Option(100.0, help="Maximum executable entry price in cents."),
+    allow_no: bool = typer.Option(False, help="Also allow NO-side executable trades."),
+    contracts: int = typer.Option(1, help="Contracts per selected trade."),
+    fee_per_contract: float = typer.Option(0.0, help="Flat fee per contract in dollars."),
+    max_spread: float = typer.Option(
+        None,
+        help="Optional maximum bid/ask spread in cents for the selected side.",
+    ),
+) -> None:
+    try:
+        trades_path, summary_path, summary = evaluate_climatology_executable_strategy(
+            scored_dataset_path=Path(input) if input else None,
+            output_path=Path(output) if output else None,
+            summary_output_path=Path(summary_output) if summary_output else None,
+            min_edge=min_edge,
+            min_samples=min_samples,
+            min_price=min_price,
+            max_price=max_price,
+            contracts=contracts,
+            fee_per_contract=fee_per_contract,
+            allow_no=allow_no,
+            max_spread=max_spread,
+        )
+    except ClimatologyExecutableEvaluationError as exc:
+        console.print(f"[red]Executable climatology evaluation failed[/red]\n{exc}")
+        raise typer.Exit(code=1) from exc
+
+    console.print(
+        f"Saved executable climatology evaluation: trades={trades_path} summary={summary_path} "
+        f"(trades: {summary['trades_taken']}, yes trades: {summary['yes_trades_taken']}, "
+        f"no trades: {summary['no_trades_taken']}, total net pnl: {summary['total_net_pnl']})"
+    )
+
+
+@backtest_app.command("compare-climatology-pricing")
+def run_climatology_pricing_comparison(
+    input: str = typer.Option("", help="Optional scored climatology parquet override."),
+    output_dir: str = typer.Option("", help="Optional comparison output directory override."),
+    min_edge: float = typer.Option(0.0, help="Minimum edge required to take a trade."),
+    min_samples: int = typer.Option(1, help="Minimum lookback sample size required."),
+    min_price: float = typer.Option(0.0, help="Minimum entry price in cents."),
+    max_price: float = typer.Option(100.0, help="Maximum entry price in cents."),
+    allow_no: bool = typer.Option(False, help="Also allow NO-side trades when supported by the mode."),
+    contracts: int = typer.Option(1, help="Contracts per selected trade."),
+    fee_per_contract: float = typer.Option(0.0, help="Flat fee per contract in dollars."),
+    max_spread: float = typer.Option(
+        None,
+        help="Optional maximum bid/ask spread in cents for executable candle-proxy mode.",
+    ),
+) -> None:
+    try:
+        json_path, csv_path, comparison = compare_climatology_pricing_modes(
+            scored_dataset_path=Path(input) if input else None,
+            output_dir=Path(output_dir) if output_dir else None,
+            min_edge=min_edge,
+            min_samples=min_samples,
+            min_price=min_price,
+            max_price=max_price,
+            contracts=contracts,
+            fee_per_contract=fee_per_contract,
+            allow_no=allow_no,
+            max_spread=max_spread,
+        )
+    except (ClimatologyPricingComparisonError, ClimatologyEvaluationError, ClimatologyExecutableEvaluationError) as exc:
+        console.print(f"[red]Climatology pricing comparison failed[/red]\n{exc}")
+        raise typer.Exit(code=1) from exc
+
+    delta = comparison["delta_executable_minus_decision_price"]
+    console.print(
+        f"Saved pricing comparison: json={json_path} csv={csv_path} "
+        f"(mode count: {len(comparison['modes'])}, "
+        f"trade delta exec-vs-decision: {delta.get('trades_taken_delta', 0)}, "
+        f"net pnl delta exec-vs-decision: {delta.get('total_net_pnl_delta', 0.0)})"
+    )
+
+
+@backtest_app.command("walkforward-climatology")
+def run_walkforward_climatology_command(
+    input: str = typer.Option("", help="Optional scored climatology parquet override."),
+    output_dir: str = typer.Option("", help="Optional walk-forward output directory override."),
+    pricing_mode: str = typer.Option("both", help="Pricing mode: decision_price, candle_proxy, or both."),
+    train_window: int = typer.Option(60, help="Training window size in ordered unique event dates."),
+    validation_window: int = typer.Option(30, help="Validation window size in ordered unique event dates."),
+    test_window: int = typer.Option(30, help="Test window size in ordered unique event dates."),
+    step_window: int = typer.Option(0, help="Step size in unique event dates. Defaults to test_window."),
+    min_trades_for_selection: int = typer.Option(1, help="Minimum validation trades required to select a threshold set."),
+    min_edge_grid: str = typer.Option("0.0,0.02,0.05", help="Comma-separated min_edge grid."),
+    min_samples_grid: str = typer.Option("1,5", help="Comma-separated min_samples grid."),
+    min_price_grid: str = typer.Option("0", help="Comma-separated min_price grid."),
+    max_price_grid: str = typer.Option("100", help="Comma-separated max_price grid."),
+    max_spread_grid: str = typer.Option("none,5", help="Comma-separated max_spread grid for candle_proxy mode."),
+    allow_no_grid: str = typer.Option("false", help="Comma-separated allow_no grid values (true/false)."),
+    expanding: bool = typer.Option(True, "--expanding/--rolling", help="Use an expanding training window."),
+    selection_metric: str = typer.Option(
+        "total_net_pnl",
+        help="Validation objective: total_net_pnl or average_net_pnl_per_trade.",
+    ),
+) -> None:
+    try:
+        results_path, summary_path, diagnostics_path, summary = run_walkforward_climatology(
+            scored_dataset_path=Path(input) if input else None,
+            output_dir=Path(output_dir) if output_dir else None,
+            pricing_mode=pricing_mode,
+            train_window=train_window,
+            validation_window=validation_window,
+            test_window=test_window,
+            step_window=step_window or None,
+            min_trades_for_selection=min_trades_for_selection,
+            min_edge_grid=_parse_float_grid(min_edge_grid),
+            min_samples_grid=_parse_int_grid(min_samples_grid),
+            min_price_grid=_parse_float_grid(min_price_grid),
+            max_price_grid=_parse_float_grid(max_price_grid),
+            max_spread_grid=_parse_optional_float_grid(max_spread_grid),
+            allow_no_grid=_parse_bool_grid(allow_no_grid),
+            expanding=expanding,
+            selection_metric=selection_metric,
+        )
+    except WalkforwardClimatologyError as exc:
+        console.print(f"[red]Walk-forward climatology evaluation failed[/red]\n{exc}")
+        raise typer.Exit(code=1) from exc
+
+    console.print(
+        f"Saved walk-forward climatology: results={results_path} summary={summary_path} diagnostics={diagnostics_path} "
+        f"(folds: {summary['fold_count']}, pricing mode: {summary['pricing_mode']})"
+    )
+
+
+@research_app.command("run-climatology-baseline")
+def run_climatology_baseline_research_command(
+    decision_time_local: str = typer.Option("10:00", help="Local decision time in HH:MM format."),
+    output_dir: str = typer.Option("", help="Optional research run output directory override."),
+    overwrite: bool = typer.Option(False, help="Allow writing into an existing non-empty output directory."),
+    pricing_mode: str = typer.Option("both", help="Pricing mode: decision_price, candle_proxy, or both."),
+    config_path: str = typer.Option("", help="Optional city config path override."),
+    weather_path: str = typer.Option("", help="Optional staged weather_daily parquet override."),
+    normals_path: str = typer.Option("", help="Optional staged weather_normals_daily parquet override."),
+    markets_path: str = typer.Option("", help="Optional staged kalshi_markets parquet override."),
+    candles_path: str = typer.Option("", help="Optional staged kalshi_candles parquet override."),
+    history_path: str = typer.Option("", help="Optional climatology history parquet override."),
+    day_window: int = typer.Option(0, help="Day-of-year half-window around month_day for the climatology sample."),
+    min_lookback_samples: int = typer.Option(1, help="Minimum required historical samples to score a row."),
+    min_edge: float = typer.Option(0.0, help="Minimum one-shot trade edge."),
+    min_samples: int = typer.Option(1, help="Minimum one-shot lookback sample size."),
+    min_price: float = typer.Option(0.0, help="Minimum one-shot entry price in cents."),
+    max_price: float = typer.Option(100.0, help="Maximum one-shot entry price in cents."),
+    allow_no: bool = typer.Option(False, help="Also allow NO-side trades when supported."),
+    contracts: int = typer.Option(1, help="Contracts per selected trade."),
+    fee_per_contract: float = typer.Option(0.0, help="Flat fee per contract in dollars."),
+    max_spread: float = typer.Option(None, help="Optional max executable spread for candle_proxy mode."),
+    train_window: int = typer.Option(60, help="Walk-forward train window in ordered unique event dates."),
+    validation_window: int = typer.Option(30, help="Walk-forward validation window in ordered unique event dates."),
+    test_window: int = typer.Option(30, help="Walk-forward test window in ordered unique event dates."),
+    step_window: int = typer.Option(0, help="Walk-forward step size. Defaults to test_window."),
+    min_trades_for_selection: int = typer.Option(1, help="Minimum validation trades required to select thresholds."),
+    min_edge_grid: str = typer.Option("0.0,0.02,0.05", help="Comma-separated min_edge grid."),
+    min_samples_grid: str = typer.Option("1,5", help="Comma-separated min_samples grid."),
+    min_price_grid: str = typer.Option("0", help="Comma-separated min_price grid."),
+    max_price_grid: str = typer.Option("100", help="Comma-separated max_price grid."),
+    max_spread_grid: str = typer.Option("none,5", help="Comma-separated max_spread grid for candle_proxy mode."),
+    allow_no_grid: str = typer.Option("false", help="Comma-separated allow_no grid values."),
+    expanding: bool = typer.Option(True, "--expanding/--rolling", help="Use an expanding training window."),
+    selection_metric: str = typer.Option(
+        "total_net_pnl",
+        help="Walk-forward validation objective: total_net_pnl or average_net_pnl_per_trade.",
+    ),
+) -> None:
+    try:
+        run_dir, manifest_path, report_json_path, report_markdown_path, manifest = run_climatology_baseline_research(
+            decision_time_local=decision_time_local,
+            output_dir=Path(output_dir) if output_dir else None,
+            overwrite=overwrite,
+            pricing_mode=pricing_mode,
+            config_path=Path(config_path) if config_path else None,
+            weather_path=Path(weather_path) if weather_path else None,
+            normals_path=Path(normals_path) if normals_path else None,
+            markets_path=Path(markets_path) if markets_path else None,
+            candles_path=Path(candles_path) if candles_path else None,
+            history_path=Path(history_path) if history_path else None,
+            day_window=day_window,
+            min_lookback_samples=min_lookback_samples,
+            min_edge=min_edge,
+            min_samples=min_samples,
+            min_price=min_price,
+            max_price=max_price,
+            allow_no=allow_no,
+            contracts=contracts,
+            fee_per_contract=fee_per_contract,
+            max_spread=max_spread,
+            train_window=train_window,
+            validation_window=validation_window,
+            test_window=test_window,
+            step_window=step_window or None,
+            min_trades_for_selection=min_trades_for_selection,
+            min_edge_grid=_parse_float_grid(min_edge_grid),
+            min_samples_grid=_parse_int_grid(min_samples_grid),
+            min_price_grid=_parse_float_grid(min_price_grid),
+            max_price_grid=_parse_float_grid(max_price_grid),
+            max_spread_grid=_parse_optional_float_grid(max_spread_grid),
+            allow_no_grid=_parse_bool_grid(allow_no_grid),
+            expanding=expanding,
+            selection_metric=selection_metric,
+        )
+    except ClimatologyResearchRunError as exc:
+        console.print(f"[red]Climatology baseline research run failed[/red]\n{exc}")
+        raise typer.Exit(code=1) from exc
+
+    console.print(
+        f"Saved climatology baseline research bundle: run_dir={run_dir} manifest={manifest_path} "
+        f"report_json={report_json_path} report_md={report_markdown_path} "
+        f"(skipped steps: {len(manifest['skipped_steps'])})"
+    )
+
+
+def _parse_float_grid(raw: str) -> tuple[float, ...]:
+    values = [chunk.strip() for chunk in raw.split(",") if chunk.strip()]
+    return tuple(float(value) for value in values)
+
+
+def _parse_int_grid(raw: str) -> tuple[int, ...]:
+    values = [chunk.strip() for chunk in raw.split(",") if chunk.strip()]
+    return tuple(int(value) for value in values)
+
+
+def _parse_optional_float_grid(raw: str) -> tuple[float | None, ...]:
+    values = [chunk.strip().lower() for chunk in raw.split(",") if chunk.strip()]
+    parsed: list[float | None] = []
+    for value in values:
+        if value in {"none", "null"}:
+            parsed.append(None)
+        else:
+            parsed.append(float(value))
+    return tuple(parsed)
+
+
+def _parse_bool_grid(raw: str) -> tuple[bool, ...]:
+    values = [chunk.strip().lower() for chunk in raw.split(",") if chunk.strip()]
+    parsed: list[bool] = []
+    for value in values:
+        if value in {"true", "1", "yes"}:
+            parsed.append(True)
+        elif value in {"false", "0", "no"}:
+            parsed.append(False)
+        else:
+            raise WalkforwardClimatologyError(f"Unsupported boolean grid value {value!r}.")
+    return tuple(parsed)
 
 
 if __name__ == "__main__":

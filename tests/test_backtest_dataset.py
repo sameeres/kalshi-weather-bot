@@ -83,6 +83,10 @@ def test_backtest_dataset_selects_latest_candle_at_or_before_decision_time(
     df = captured["df"]
     assert df.loc[0, "decision_candle_ts"] == "2026-03-20T14:00:00+00:00"
     assert df.loc[0, "decision_price"] == 44
+    assert df.loc[0, "yes_bid"] == 41
+    assert df.loc[0, "yes_ask"] == 45
+    assert df.loc[0, "no_bid"] == 55
+    assert df.loc[0, "no_ask"] == 59
 
 
 def test_backtest_dataset_excludes_candles_after_decision_time(
@@ -178,6 +182,68 @@ def test_backtest_dataset_joins_weather_and_normals_correctly(
     assert df.loc[0, "normals_station_id"] == "KLGA"
 
 
+def test_backtest_dataset_derives_conservative_quotes_from_decision_candle(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config_path = _write_single_city_config(tmp_path)
+    staging_dir = _write_staged_placeholders(tmp_path)
+    captured: dict[str, pd.DataFrame] = {}
+    frames = _base_frames()
+    frames["kalshi_candles.parquet"] = pd.DataFrame(
+        [
+            {
+                "market_ticker": "KXHIGHNY-26MAR20-B65",
+                "city_key": "nyc",
+                "candle_ts": "2026-03-20T13:00:00+00:00",
+                "open": 38,
+                "high": 42,
+                "low": 37,
+                "close": 40,
+                "volume": 9,
+                "interval": "1h",
+                "ingested_at": "2026-03-20T13:00:00+00:00",
+            },
+            {
+                "market_ticker": "KXHIGHNY-26MAR20-B65",
+                "city_key": "nyc",
+                "candle_ts": "2026-03-20T14:00:00+00:00",
+                "open": 42,
+                "high": 47,
+                "low": 41,
+                "close": 44,
+                "volume": 11,
+                "interval": "1h",
+                "ingested_at": "2026-03-20T14:00:00+00:00",
+            },
+        ]
+    )
+
+    monkeypatch.setattr(pd, "read_parquet", lambda path: frames[Path(path).name].copy())
+    monkeypatch.setattr(
+        pd.DataFrame,
+        "to_parquet",
+        lambda self, path, index=False: captured.setdefault("df", self.copy()),
+    )
+
+    build_backtest_dataset(
+        decision_time_local="10:00",
+        config_path=config_path,
+        weather_path=staging_dir / "weather_daily.parquet",
+        normals_path=staging_dir / "weather_normals_daily.parquet",
+        markets_path=staging_dir / "kalshi_markets.parquet",
+        candles_path=staging_dir / "kalshi_candles.parquet",
+        output_dir=tmp_path,
+    )
+
+    df = captured["df"]
+    assert df.loc[0, "decision_price"] == 44
+    assert df.loc[0, "yes_bid"] == 41
+    assert df.loc[0, "yes_ask"] == 47
+    assert df.loc[0, "no_bid"] == 53
+    assert df.loc[0, "no_ask"] == 59
+
+
 def test_backtest_dataset_output_schema_contains_required_columns(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -225,6 +291,10 @@ def test_backtest_dataset_output_schema_contains_required_columns(
         "decision_ts",
         "decision_candle_ts",
         "decision_price",
+        "yes_bid",
+        "yes_ask",
+        "no_bid",
+        "no_ask",
         "candle_interval",
         "actual_tmax_f",
         "normal_tmax_f",

@@ -20,6 +20,32 @@ DEFAULT_CANDLES_FILENAME = "kalshi_candles.parquet"
 INTERVAL_TO_MINUTES = {"1m": 1, "5m": 5, "15m": 15, "1h": 60, "1d": 1440}
 
 
+def describe_local_quote_history_capabilities() -> dict[str, Any]:
+    """Describe the best point-in-time market microstructure available locally.
+
+    The current research pipeline stages:
+    - market metadata (`kalshi_markets.parquet`)
+    - OHLCV candlesticks (`kalshi_candles.parquet`)
+
+    It does not currently stage:
+    - historical best-bid / best-ask snapshots
+    - order book depth history
+    - quote update or tick-by-tick trade history
+    """
+    return {
+        "has_true_historical_best_bid_ask": False,
+        "has_orderbook_history": False,
+        "has_trade_history": False,
+        "has_candle_history": True,
+        "best_local_quote_source": "candlestick_ohlcv",
+        "local_quote_limitations": [
+            "No historical best-bid/best-ask snapshots are staged locally.",
+            "No order-book depth history is staged locally.",
+            "Executable backtests must use candle-derived quote proxies unless richer local data is added.",
+        ],
+    }
+
+
 def ingest_kalshi_market_history_for_enabled_cities(
     start_date: str,
     end_date: str,

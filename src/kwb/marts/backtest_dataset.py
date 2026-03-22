@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime, time, timezone
+from numbers import Real
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -35,7 +36,7 @@ REQUIRED_MARKETS_COLUMNS = {
     "cap_strike",
     "strike_type",
 }
-REQUIRED_CANDLES_COLUMNS = {"city_key", "market_ticker", "candle_ts", "close", "interval"}
+REQUIRED_CANDLES_COLUMNS = {"city_key", "market_ticker", "candle_ts", "high", "low", "close", "interval"}
 
 
 class BacktestDatasetBuildError(ValueError):
@@ -145,6 +146,10 @@ def _build_backtest_frame(
         "decision_ts",
         "decision_candle_ts",
         "decision_price",
+        "yes_bid",
+        "yes_ask",
+        "no_bid",
+        "no_ask",
         "candle_interval",
         "actual_tmax_f",
         "normal_tmax_f",
@@ -268,6 +273,10 @@ def _attach_decision_candles(markets_df: pd.DataFrame, candles_df: pd.DataFrame)
 
     decision_candle_ts: list[str | None] = []
     decision_prices: list[float | None] = []
+    yes_bids: list[float | None] = []
+    yes_asks: list[float | None] = []
+    no_bids: list[float | None] = []
+    no_asks: list[float | None] = []
     candle_intervals: list[str | None] = []
 
     for row in markets_df.itertuples(index=False):
@@ -275,6 +284,10 @@ def _attach_decision_candles(markets_df: pd.DataFrame, candles_df: pd.DataFrame)
         if market_candles is None:
             decision_candle_ts.append(None)
             decision_prices.append(None)
+            yes_bids.append(None)
+            yes_asks.append(None)
+            no_bids.append(None)
+            no_asks.append(None)
             candle_intervals.append(None)
             continue
 
@@ -282,19 +295,62 @@ def _attach_decision_candles(markets_df: pd.DataFrame, candles_df: pd.DataFrame)
         if eligible.empty:
             decision_candle_ts.append(None)
             decision_prices.append(None)
+            yes_bids.append(None)
+            yes_asks.append(None)
+            no_bids.append(None)
+            no_asks.append(None)
             candle_intervals.append(None)
             continue
 
         latest = eligible.iloc[-1]
+        yes_bid, yes_ask, no_bid, no_ask = _derive_executable_quotes(latest)
         decision_candle_ts.append(latest["candle_ts"].isoformat())
         decision_prices.append(latest["close"])
+        yes_bids.append(yes_bid)
+        yes_asks.append(yes_ask)
+        no_bids.append(no_bid)
+        no_asks.append(no_ask)
         candle_intervals.append(latest["interval"])
 
     merged = markets_df.copy()
     merged["decision_candle_ts"] = decision_candle_ts
     merged["decision_price"] = decision_prices
+    merged["yes_bid"] = yes_bids
+    merged["yes_ask"] = yes_asks
+    merged["no_bid"] = no_bids
+    merged["no_ask"] = no_asks
     merged["candle_interval"] = candle_intervals
     return merged
+
+
+def _derive_executable_quotes(candle_row: pd.Series) -> tuple[float | None, float | None, float | None, float | None]:
+    """Derive conservative executable quotes from the last completed candle.
+
+    Assumptions:
+    - We only have point-in-time-safe candle OHLC data in the current MVP pipeline.
+    - For the YES side, the candle low/high bound a conservative proxy for bid/ask at
+      the decision snapshot: `yes_bid = low`, `yes_ask = high`.
+    - For the complementary NO contract, derive quotes via the standard complement:
+      `no_bid = 100 - yes_ask`, `no_ask = 100 - yes_bid`.
+    """
+    yes_bid = _normalize_optional_cents(candle_row.get("low"), "low")
+    yes_ask = _normalize_optional_cents(candle_row.get("high"), "high")
+    if yes_bid is None or yes_ask is None:
+        return None, None, None, None
+    return yes_bid, yes_ask, round(100.0 - yes_ask, 6), round(100.0 - yes_bid, 6)
+
+
+def _normalize_optional_cents(value: Any, field_name: str) -> float | None:
+    if value is None or pd.isna(value):
+        return None
+    if not isinstance(value, Real):
+        raise BacktestDatasetBuildError(f"Expected numeric candle field for {field_name}, got {value!r}")
+    cents_value = float(value)
+    if cents_value < 0 or cents_value > 100:
+        raise BacktestDatasetBuildError(
+            f"Candle field {field_name} must be between 0 and 100 cents, got {cents_value}"
+        )
+    return round(cents_value, 6)
 
 
 def _parse_decision_time_local(value: str) -> time:

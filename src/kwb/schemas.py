@@ -129,6 +129,10 @@ class BacktestDatasetRow:
     decision_ts: datetime
     decision_candle_ts: datetime
     decision_price: Optional[float]
+    yes_bid: Optional[float]
+    yes_ask: Optional[float]
+    no_bid: Optional[float]
+    no_ask: Optional[float]
     candle_interval: str
     actual_tmax_f: Optional[float]
     normal_tmax_f: Optional[float]
@@ -147,6 +151,10 @@ class ClimatologyScoredRow:
     event_date: date
     decision_ts: datetime
     decision_price: Optional[float]
+    yes_bid: Optional[float]
+    yes_ask: Optional[float]
+    no_bid: Optional[float]
+    no_ask: Optional[float]
     actual_tmax_f: Optional[float]
     normal_tmax_f: Optional[float]
     tmax_anomaly_f: Optional[float]
@@ -174,8 +182,108 @@ class ClimatologyTradeRow:
     chosen_side: str
     entry_price: float
     edge_at_entry: float
+    pricing_mode: str
     contracts: int
     gross_pnl: float
     net_pnl: float
     lookback_sample_size: int
     model_name: str
+
+
+@dataclass
+class ClimatologyExecutableTradeRow:
+    city_key: str
+    market_ticker: str
+    event_date: date
+    decision_ts: datetime
+    decision_price: float
+    resolved_yes: bool
+    model_prob_yes: float
+    model_prob_no: float
+    fair_yes: float
+    fair_no: float
+    yes_bid: Optional[float]
+    yes_ask: Optional[float]
+    no_bid: Optional[float]
+    no_ask: Optional[float]
+    chosen_side: str
+    entry_price: float
+    entry_price_source: str
+    pricing_mode: str
+    quote_source: str
+    uses_true_quotes: bool
+    quote_spread: Optional[float]
+    exec_edge_yes: Optional[float]
+    exec_edge_no: Optional[float]
+    edge_at_entry: float
+    contracts: int
+    gross_pnl: float
+    net_pnl: float
+    lookback_sample_size: int
+    model_name: str
+
+
+@dataclass
+class WalkforwardFoldResultRow:
+    fold_number: int
+    pricing_mode: str
+    train_start: str
+    train_end: str
+    validation_start: str
+    validation_end: str
+    test_start: str
+    test_end: str
+    selected_min_edge: Optional[float]
+    selected_min_samples: Optional[int]
+    selected_min_price: Optional[float]
+    selected_max_price: Optional[float]
+    selected_allow_no: Optional[bool]
+    selected_max_spread: Optional[float]
+    validation_trades: int
+    validation_total_net_pnl: float
+    validation_average_net_pnl_per_trade: float
+    test_rows_evaluated: int
+    test_trades: int
+    test_yes_trades: int
+    test_no_trades: int
+    test_hit_rate: float
+    test_average_edge_at_entry: float
+    test_total_gross_pnl: float
+    test_total_net_pnl: float
+    test_brier_score: float
+    skip_reason: str
+
+
+@dataclass
+class WalkforwardDiagnosticRow:
+    pricing_mode: str
+    subset: str
+    breakdown: str
+    bucket: str
+    trades_taken: int
+    yes_trades_taken: int
+    no_trades_taken: int
+    hit_rate: float
+    average_edge_at_entry: float
+    average_net_pnl_per_trade: float
+    total_net_pnl: float
+
+
+@dataclass
+class ClimatologyResearchManifest:
+    model_name: str
+    run_timestamp_utc: str
+    run_directory: str
+    pricing_modes_requested: list[str]
+    decision_time_local: str
+    parquet_engine_available: bool
+    parquet_engine_limitations_affected_execution: bool
+    real_local_data_available: bool
+
+
+@dataclass
+class ClimatologyBaselineReport:
+    model_name: str
+    run_timestamp_utc: str
+    baseline_status: str
+    baseline_status_reason: str

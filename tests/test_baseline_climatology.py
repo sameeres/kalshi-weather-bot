@@ -124,6 +124,10 @@ def test_climatology_output_schema_contains_required_columns(
         "event_date",
         "decision_ts",
         "decision_price",
+        "yes_bid",
+        "yes_ask",
+        "no_bid",
+        "no_ask",
         "actual_tmax_f",
         "normal_tmax_f",
         "tmax_anomaly_f",
@@ -136,6 +140,35 @@ def test_climatology_output_schema_contains_required_columns(
         "lookback_sample_size",
         "model_name",
     ]
+
+
+def test_climatology_preserves_quote_columns_unchanged(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    backtest_path, history_path = _write_placeholders(tmp_path)
+    captured: dict[str, pd.DataFrame] = {}
+    frames = _base_frames()
+
+    monkeypatch.setattr(pd, "read_parquet", lambda path: frames[Path(path).name].copy())
+    monkeypatch.setattr(
+        pd.DataFrame,
+        "to_parquet",
+        lambda self, path, index=False: captured.setdefault("df", self.copy()),
+    )
+
+    score_climatology_baseline(
+        backtest_dataset_path=backtest_path,
+        history_path=history_path,
+        output_dir=tmp_path,
+    )
+
+    df = captured["df"]
+    assert df.loc[0, "decision_price"] == 44.0
+    assert df.loc[0, "yes_bid"] == 41.0
+    assert df.loc[0, "yes_ask"] == 45.0
+    assert df.loc[0, "no_bid"] == 55.0
+    assert df.loc[0, "no_ask"] == 59.0
 
 
 def test_climatology_insufficient_lookback_is_handled_explicitly(
@@ -226,6 +259,10 @@ def _base_frames() -> dict[str, pd.DataFrame]:
                     "event_date": "2026-03-20",
                     "decision_ts": "2026-03-20T14:00:00+00:00",
                     "decision_price": 44.0,
+                    "yes_bid": 41.0,
+                    "yes_ask": 45.0,
+                    "no_bid": 55.0,
+                    "no_ask": 59.0,
                     "actual_tmax_f": 70.0,
                     "normal_tmax_f": 64.0,
                     "tmax_anomaly_f": 6.0,

@@ -5,7 +5,10 @@ from typer.testing import CliRunner
 
 import kwb.cli as cli_module
 from kwb.cli import app
-from kwb.ingestion.kalshi_market_history import ingest_kalshi_market_history_for_enabled_cities
+from kwb.ingestion.kalshi_market_history import (
+    describe_local_quote_history_capabilities,
+    ingest_kalshi_market_history_for_enabled_cities,
+)
 
 
 class FakeKalshiHistoryClient:
@@ -233,6 +236,14 @@ def test_kalshi_market_history_candle_rows_normalize_correctly(
     assert len(candles_df) == 2
     assert candles_df.loc[0, "candle_ts"].endswith("+00:00")
     assert candles_df.loc[0, "interval"] == "1h"
+
+
+def test_local_quote_history_capabilities_are_explicit() -> None:
+    capabilities = describe_local_quote_history_capabilities()
+
+    assert capabilities["has_true_historical_best_bid_ask"] is False
+    assert capabilities["has_candle_history"] is True
+    assert capabilities["best_local_quote_source"] == "candlestick_ohlcv"
 
 
 def test_kalshi_market_history_paginates_events_and_markets(
