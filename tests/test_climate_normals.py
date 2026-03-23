@@ -37,7 +37,7 @@ def test_climate_normals_ingestion_succeeds_for_validated_city(
     config_path = _write_complete_city_config(tmp_path)
     client = FakeNCEINormalsClient(
         {
-            "KLGA": [
+            "GHCND:USW00014732": [
                 {"date": "2010-03-20T00:00:00", "datatype": "DLY-TMAX-NORMAL", "value": 111, "datasetid": "NORMAL_DLY"},
                 {"date": "2010-03-20T00:00:00", "datatype": "DLY-TMIN-NORMAL", "value": 22, "datasetid": "NORMAL_DLY"},
             ]
@@ -62,7 +62,7 @@ def test_climate_normals_ingestion_succeeds_for_validated_city(
     assert station_count == 1
     assert captured["path"] == outpath
     assert client.calls == [
-        ("KLGA", "2010-01-01", "2010-12-31", "NORMAL_DLY", ("DLY-TMAX-NORMAL", "DLY-TMIN-NORMAL"))
+        ("GHCND:USW00014732", "2010-01-01", "2010-12-31", "NORMAL_DLY", ("DLY-TMAX-NORMAL", "DLY-TMIN-NORMAL"))
     ]
 
     df = captured["df"]
@@ -117,7 +117,7 @@ def test_climate_normals_temperature_conversion_is_correct(
     config_path = _write_complete_city_config(tmp_path)
     client = FakeNCEINormalsClient(
         {
-            "KLGA": [
+            "GHCND:USW00014732": [
                 {"date": "2010-03-20T00:00:00", "datatype": "DLY-TMAX-NORMAL", "value": 250, "datasetid": "NORMAL_DLY"},
                 {"date": "2010-03-20T00:00:00", "datatype": "DLY-TMIN-NORMAL", "value": 0, "datasetid": "NORMAL_DLY"},
             ]
@@ -150,7 +150,7 @@ def test_climate_normals_duplicate_station_month_day_rows_are_collapsed(
     config_path = _write_complete_city_config(tmp_path)
     client = FakeNCEINormalsClient(
         {
-            "KLGA": [
+            "GHCND:USW00014732": [
                 {"date": "2010-03-20T00:00:00", "datatype": "DLY-TMAX-NORMAL", "value": 200, "datasetid": "NORMAL_DLY"},
                 {"date": "2010-03-20T00:00:00", "datatype": "DLY-TMAX-NORMAL", "value": 210, "datasetid": "NORMAL_DLY"},
                 {"date": "2010-03-20T00:00:00", "datatype": "DLY-TMIN-NORMAL", "value": 100, "datasetid": "NORMAL_DLY"},
@@ -182,7 +182,7 @@ def test_climate_normals_month_day_normalizes_correctly(
     config_path = _write_complete_city_config(tmp_path)
     client = FakeNCEINormalsClient(
         {
-            "KLGA": [
+            "GHCND:USW00014732": [
                 {"date": "2010-01-05T00:00:00", "datatype": "DLY-TMAX-NORMAL", "value": 50, "datasetid": "NORMAL_DLY"},
                 {"date": "2010-01-05T00:00:00", "datatype": "DLY-TMIN-NORMAL", "value": -10, "datasetid": "NORMAL_DLY"},
             ]

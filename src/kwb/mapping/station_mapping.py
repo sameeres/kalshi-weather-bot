@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 import pandas as pd
 
@@ -72,6 +73,7 @@ def _collect_city_issues(city: dict[str, Any]) -> list[str]:
     city_key = city.get("city_key") or "<missing-city-key>"
     issues: list[str] = []
     required_fields = [
+        "settlement_source_name",
         "settlement_source_url",
         "settlement_station_id",
         "settlement_station_name",
@@ -90,6 +92,33 @@ def _collect_city_issues(city: dict[str, Any]) -> list[str]:
             continue
         if not isinstance(value, (int, float)):
             issues.append(f"Enabled city {city_key} has non-numeric {field}: {value!r}")
+            continue
+        if field == "station_lat" and not (-90.0 <= float(value) <= 90.0):
+            issues.append(f"Enabled city {city_key} has out-of-range station_lat: {value!r}")
+        if field == "station_lon" and not (-180.0 <= float(value) <= 180.0):
+            issues.append(f"Enabled city {city_key} has out-of-range station_lon: {value!r}")
+
+    station_id = city.get("settlement_station_id")
+    if station_id not in (None, ""):
+        if not isinstance(station_id, str) or len(station_id.strip()) < 3:
+            issues.append(f"Enabled city {city_key} has implausible settlement_station_id: {station_id!r}")
+
+    station_name = city.get("settlement_station_name")
+    if station_name not in (None, "") and (not isinstance(station_name, str) or not station_name.strip()):
+        issues.append(f"Enabled city {city_key} has empty settlement_station_name.")
+
+    source_name = city.get("settlement_source_name")
+    if source_name not in (None, "") and (not isinstance(source_name, str) or not source_name.strip()):
+        issues.append(f"Enabled city {city_key} has empty settlement_source_name.")
+
+    source_url = city.get("settlement_source_url")
+    if source_url not in (None, ""):
+        if not isinstance(source_url, str):
+            issues.append(f"Enabled city {city_key} has non-string settlement_source_url: {source_url!r}")
+        else:
+            parsed = urlparse(source_url)
+            if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+                issues.append(f"Enabled city {city_key} has implausible settlement_source_url: {source_url!r}")
 
     return issues
 

@@ -1,13 +1,18 @@
 from pathlib import Path
 
 import pandas as pd
+import requests
 from typer.testing import CliRunner
 
 import kwb.cli as cli_module
 from kwb.cli import app
+from kwb.clients.kalshi import KalshiClient
 from kwb.ingestion.kalshi_market_history import (
+    DEFAULT_KALSHI_HISTORY_MANIFEST_FILENAME,
+    KalshiHistoryIngestionError,
     describe_local_quote_history_capabilities,
     ingest_kalshi_market_history_for_enabled_cities,
+    summarize_kalshi_history_manifest,
 )
 
 
@@ -117,36 +122,63 @@ class FakeKalshiHistoryClient:
         }
 
 
-def test_kalshi_market_history_ingestion_succeeds_for_enabled_series(
-    tmp_path: Path,
-    monkeypatch,
-) -> None:
-    config_path = _write_cities_config(
-        tmp_path,
-        [
-            {
-                "city_key": "nyc",
-                "city_name": "New York City",
-                "timezone": "America/New_York",
-                "kalshi_series_ticker": "KXHIGHNY",
-                "enabled": True,
-            },
-            {
-                "city_key": "chicago",
-                "city_name": "Chicago",
-                "timezone": "America/Chicago",
-                "kalshi_series_ticker": "KXHIGHCHI",
-                "enabled": False,
-            },
-        ],
-    )
+class FlakyKalshiHistoryClient(FakeKalshiHistoryClient):
+    def __init__(self) -> None:
+        super().__init__()
+        self.failed_once = False
+
+    def get_market_candlesticks(
+        self,
+        series_ticker: str,
+        market_ticker: str,
+        start_ts: int,
+        end_ts: int,
+        period_interval: int,
+        include_latest_before_start: bool = False,
+    ) -> dict:
+        if not self.failed_once and market_ticker == "KXHIGHNY-26MAR21-B70":
+            self.failed_once = True
+            response = requests.Response()
+            response.status_code = 429
+            raise requests.HTTPError("429 Client Error: Too Many Requests", response=response)
+        return super().get_market_candlesticks(
+            series_ticker=series_ticker,
+            market_ticker=market_ticker,
+            start_ts=start_ts,
+            end_ts=end_ts,
+            period_interval=period_interval,
+            include_latest_before_start=include_latest_before_start,
+        )
+
+
+def test_kalshi_market_history_ingestion_succeeds_for_enabled_series(tmp_path: Path) -> None:
+    config_path = _write_single_enabled_city(tmp_path)
     client = FakeKalshiHistoryClient()
-    captured: dict[str, pd.DataFrame] = {}
 
-    def fake_to_parquet(self: pd.DataFrame, path: Path, index: bool = False) -> None:
-        captured[Path(path).name] = self.copy()
+    markets_path, candles_path, details = ingest_kalshi_market_history_for_enabled_cities(
+        start_date="2026-03-20",
+        end_date="2026-03-21",
+        interval="1h",
+        config_path=config_path,
+        output_dir=tmp_path,
+        client=client,
+        return_details=True,
+    )
 
-    monkeypatch.setattr(pd.DataFrame, "to_parquet", fake_to_parquet)
+    markets_df = pd.read_parquet(markets_path)
+    candles_df = pd.read_parquet(candles_path)
+    assert details["final_outputs_written"] is True
+    assert markets_path.name == "kalshi_markets.parquet"
+    assert candles_path.name == "kalshi_candles.parquet"
+    assert {call[0] for call in client.event_calls} == {"KXHIGHNY"}
+    assert {call[0] for call in client.market_calls} == {"KXHIGHNY"}
+    assert len(markets_df) == 2
+    assert len(candles_df) == 2
+
+
+def test_kalshi_market_history_required_columns_are_present(tmp_path: Path) -> None:
+    config_path = _write_single_enabled_city(tmp_path)
+    client = FakeKalshiHistoryClient()
 
     markets_path, candles_path = ingest_kalshi_market_history_for_enabled_cities(
         start_date="2026-03-20",
@@ -157,33 +189,8 @@ def test_kalshi_market_history_ingestion_succeeds_for_enabled_series(
         client=client,
     )
 
-    assert markets_path.name == "kalshi_markets.parquet"
-    assert candles_path.name == "kalshi_candles.parquet"
-    assert set(captured) == {"kalshi_markets.parquet", "kalshi_candles.parquet"}
-    assert {call[0] for call in client.event_calls} == {"KXHIGHNY"}
-    assert {call[0] for call in client.market_calls} == {"KXHIGHNY"}
-
-
-def test_kalshi_market_history_required_columns_are_present(
-    tmp_path: Path,
-    monkeypatch,
-) -> None:
-    config_path = _write_single_enabled_city(tmp_path)
-    client = FakeKalshiHistoryClient()
-    captured: dict[str, pd.DataFrame] = {}
-    monkeypatch.setattr(pd.DataFrame, "to_parquet", lambda self, path, index=False: captured.setdefault(Path(path).name, self.copy()))
-
-    ingest_kalshi_market_history_for_enabled_cities(
-        start_date="2026-03-20",
-        end_date="2026-03-21",
-        interval="1h",
-        config_path=config_path,
-        output_dir=tmp_path,
-        client=client,
-    )
-
-    markets_df = captured["kalshi_markets.parquet"]
-    candles_df = captured["kalshi_candles.parquet"]
+    markets_df = pd.read_parquet(markets_path)
+    candles_df = pd.read_parquet(candles_path)
     assert list(markets_df.columns) == [
         "city_key",
         "series_ticker",
@@ -214,16 +221,11 @@ def test_kalshi_market_history_required_columns_are_present(
     ]
 
 
-def test_kalshi_market_history_candle_rows_normalize_correctly(
-    tmp_path: Path,
-    monkeypatch,
-) -> None:
+def test_kalshi_market_history_candle_rows_normalize_correctly(tmp_path: Path) -> None:
     config_path = _write_single_enabled_city(tmp_path)
     client = FakeKalshiHistoryClient()
-    captured: dict[str, pd.DataFrame] = {}
-    monkeypatch.setattr(pd.DataFrame, "to_parquet", lambda self, path, index=False: captured.setdefault(Path(path).name, self.copy()))
 
-    ingest_kalshi_market_history_for_enabled_cities(
+    _, candles_path = ingest_kalshi_market_history_for_enabled_cities(
         start_date="2026-03-20",
         end_date="2026-03-21",
         interval="1h",
@@ -232,7 +234,7 @@ def test_kalshi_market_history_candle_rows_normalize_correctly(
         client=client,
     )
 
-    candles_df = captured["kalshi_candles.parquet"]
+    candles_df = pd.read_parquet(candles_path)
     assert len(candles_df) == 2
     assert candles_df.loc[0, "candle_ts"].endswith("+00:00")
     assert candles_df.loc[0, "interval"] == "1h"
@@ -246,16 +248,11 @@ def test_local_quote_history_capabilities_are_explicit() -> None:
     assert capabilities["best_local_quote_source"] == "candlestick_ohlcv"
 
 
-def test_kalshi_market_history_paginates_events_and_markets(
-    tmp_path: Path,
-    monkeypatch,
-) -> None:
+def test_kalshi_market_history_paginates_events_and_markets(tmp_path: Path) -> None:
     config_path = _write_single_enabled_city(tmp_path)
     client = FakeKalshiHistoryClient()
-    captured: dict[str, pd.DataFrame] = {}
-    monkeypatch.setattr(pd.DataFrame, "to_parquet", lambda self, path, index=False: captured.setdefault(Path(path).name, self.copy()))
 
-    ingest_kalshi_market_history_for_enabled_cities(
+    markets_path, _ = ingest_kalshi_market_history_for_enabled_cities(
         start_date="2026-03-20",
         end_date="2026-03-21",
         interval="1h",
@@ -268,20 +265,15 @@ def test_kalshi_market_history_paginates_events_and_markets(
     assert ("KXHIGHNY", "event-page-2") in client.event_calls
     assert ("KXHIGHNY", None) in client.market_calls
     assert ("KXHIGHNY", "market-page-2") in client.market_calls
-    markets_df = captured["kalshi_markets.parquet"]
+    markets_df = pd.read_parquet(markets_path)
     assert len(markets_df) == 2
 
 
-def test_kalshi_market_history_duplicate_candles_are_handled_sensibly(
-    tmp_path: Path,
-    monkeypatch,
-) -> None:
+def test_kalshi_market_history_duplicate_candles_are_handled_sensibly(tmp_path: Path) -> None:
     config_path = _write_single_enabled_city(tmp_path)
     client = FakeKalshiHistoryClient()
-    captured: dict[str, pd.DataFrame] = {}
-    monkeypatch.setattr(pd.DataFrame, "to_parquet", lambda self, path, index=False: captured.setdefault(Path(path).name, self.copy()))
 
-    ingest_kalshi_market_history_for_enabled_cities(
+    _, candles_path = ingest_kalshi_market_history_for_enabled_cities(
         start_date="2026-03-20",
         end_date="2026-03-21",
         interval="1h",
@@ -290,10 +282,118 @@ def test_kalshi_market_history_duplicate_candles_are_handled_sensibly(
         client=client,
     )
 
-    candles_df = captured["kalshi_candles.parquet"]
+    candles_df = pd.read_parquet(candles_path)
     market_slice = candles_df.loc[candles_df["market_ticker"] == "KXHIGHNY-26MAR20-B65"]
     assert len(market_slice) == 1
     assert market_slice.iloc[0]["close"] == 45
+
+
+def test_kalshi_market_history_persists_partial_progress_and_resumes(tmp_path: Path) -> None:
+    config_path = _write_single_enabled_city(tmp_path)
+    flaky_client = FlakyKalshiHistoryClient()
+
+    try:
+        ingest_kalshi_market_history_for_enabled_cities(
+            start_date="2026-03-20",
+            end_date="2026-03-21",
+            interval="1h",
+            config_path=config_path,
+            output_dir=tmp_path,
+            client=flaky_client,
+        )
+    except KalshiHistoryIngestionError as exc:
+        details = exc.details
+    else:  # pragma: no cover
+        raise AssertionError("Expected KalshiHistoryIngestionError")
+
+    assert details["resume_recommended"] is True
+    assert details["completed_market_chunks"] == 1
+    assert details["completed_candle_chunks"] == 1
+    assert details["failed_candle_chunks"] == 1
+    assert not (tmp_path / "kalshi_markets.parquet").exists()
+    assert not (tmp_path / "kalshi_candles.parquet").exists()
+    assert (tmp_path / DEFAULT_KALSHI_HISTORY_MANIFEST_FILENAME).exists()
+
+    resumed_client = FakeKalshiHistoryClient()
+    markets_path, candles_path, resumed_details = ingest_kalshi_market_history_for_enabled_cities(
+        start_date="2026-03-20",
+        end_date="2026-03-21",
+        interval="1h",
+        config_path=config_path,
+        output_dir=tmp_path,
+        client=resumed_client,
+        resume=True,
+        return_details=True,
+    )
+
+    assert resumed_details["final_outputs_written"] is True
+    assert sum(call[1] == "KXHIGHNY-26MAR20-B65" for call in resumed_client.candle_calls) == 0
+    assert sum(call[1] == "KXHIGHNY-26MAR21-B70" for call in resumed_client.candle_calls) == 1
+    assert pd.read_parquet(markets_path).shape[0] == 2
+    assert pd.read_parquet(candles_path).shape[0] == 2
+
+
+def test_kalshi_client_retries_429_then_succeeds(monkeypatch) -> None:
+    client = KalshiClient(max_retries=2, initial_backoff_seconds=0.1, max_backoff_seconds=0.2)
+    calls = {"count": 0}
+    sleeps: list[float] = []
+
+    class _Response:
+        def __init__(self, status_code: int, payload: dict) -> None:
+            self.status_code = status_code
+            self._payload = payload
+            self.headers = {"Retry-After": "0"}
+
+        def raise_for_status(self) -> None:
+            if self.status_code >= 400:
+                raise requests.HTTPError(f"{self.status_code} error", response=self)
+
+        def json(self) -> dict:
+            return self._payload
+
+    def fake_get(url: str, params=None, timeout: int = 20):
+        calls["count"] += 1
+        if calls["count"] == 1:
+            return _Response(429, {})
+        return _Response(200, {"events": []})
+
+    monkeypatch.setattr(client.session, "get", fake_get)
+    monkeypatch.setattr("kwb.clients.kalshi.time.sleep", lambda seconds: sleeps.append(seconds))
+
+    payload = client.get_events(series_ticker="KXHIGHNY")
+
+    assert payload == {"events": []}
+    assert calls["count"] == 2
+    assert len(sleeps) == 1
+    assert client.retry_summary()["total_retries"] == 1
+
+
+def test_kalshi_client_exhausts_retries_on_persistent_429(monkeypatch) -> None:
+    client = KalshiClient(max_retries=2, initial_backoff_seconds=0.1, max_backoff_seconds=0.2)
+    sleeps: list[float] = []
+
+    class _Response:
+        status_code = 429
+        headers = {"Retry-After": "0"}
+
+        def raise_for_status(self) -> None:
+            raise requests.HTTPError("429 error", response=self)
+
+        def json(self) -> dict:
+            return {}
+
+    monkeypatch.setattr(client.session, "get", lambda url, params=None, timeout=20: _Response())
+    monkeypatch.setattr("kwb.clients.kalshi.time.sleep", lambda seconds: sleeps.append(seconds))
+
+    try:
+        client.get_events(series_ticker="KXHIGHNY")
+    except requests.HTTPError:
+        pass
+    else:  # pragma: no cover
+        raise AssertionError("Expected HTTPError after retry exhaustion")
+
+    assert len(sleeps) == 2
+    assert client.retry_summary()["total_retries"] == 2
 
 
 def test_kalshi_history_cli_smoke(tmp_path: Path, monkeypatch) -> None:
@@ -303,7 +403,12 @@ def test_kalshi_history_cli_smoke(tmp_path: Path, monkeypatch) -> None:
         assert kwargs["start_date"] == "2026-03-20"
         assert kwargs["end_date"] == "2026-03-21"
         assert kwargs["interval"] == "1h"
-        return tmp_path / "kalshi_markets.parquet", tmp_path / "kalshi_candles.parquet"
+        assert kwargs["resume"] is True
+        return (
+            tmp_path / "kalshi_markets.parquet",
+            tmp_path / "kalshi_candles.parquet",
+            {"retry_summary": {"total_retries": 2}, "resume_supported": True},
+        )
 
     monkeypatch.setattr(cli_module, "ingest_kalshi_market_history_for_enabled_cities", fake_ingest)
 
@@ -319,11 +424,64 @@ def test_kalshi_history_cli_smoke(tmp_path: Path, monkeypatch) -> None:
             "2026-03-21",
             "--config-path",
             str(config_path),
+            "--resume",
         ],
     )
 
     assert result.exit_code == 0
     assert "Saved Kalshi history" in result.stdout
+    assert "retries=2" in result.stdout
+
+
+def test_manifest_summary_reports_resume_state(tmp_path: Path) -> None:
+    config_path = _write_single_enabled_city(tmp_path)
+    flaky_client = FlakyKalshiHistoryClient()
+
+    try:
+        ingest_kalshi_market_history_for_enabled_cities(
+            start_date="2026-03-20",
+            end_date="2026-03-21",
+            interval="1h",
+            config_path=config_path,
+            output_dir=tmp_path,
+            client=flaky_client,
+        )
+    except KalshiHistoryIngestionError:
+        pass
+
+    summary = summarize_kalshi_history_manifest(tmp_path)
+    assert summary is not None
+    assert summary["status"] == "failed"
+    assert summary["resume_recommended"] is True
+
+
+def test_resume_rejects_mismatched_date_range(tmp_path: Path) -> None:
+    config_path = _write_single_enabled_city(tmp_path)
+    client = FakeKalshiHistoryClient()
+
+    ingest_kalshi_market_history_for_enabled_cities(
+        start_date="2026-03-20",
+        end_date="2026-03-21",
+        interval="1h",
+        config_path=config_path,
+        output_dir=tmp_path,
+        client=client,
+    )
+
+    try:
+        ingest_kalshi_market_history_for_enabled_cities(
+            start_date="2026-03-19",
+            end_date="2026-03-21",
+            interval="1h",
+            config_path=config_path,
+            output_dir=tmp_path,
+            client=client,
+            resume=True,
+        )
+    except ValueError as exc:
+        assert "different parameters" in str(exc)
+    else:  # pragma: no cover
+        raise AssertionError("Expected resume parameter mismatch to fail")
 
 
 def _write_single_enabled_city(tmp_path: Path) -> Path:

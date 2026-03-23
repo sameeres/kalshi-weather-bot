@@ -85,6 +85,54 @@ def test_validate_enabled_city_mappings_fails_when_coordinates_missing(tmp_path:
         validate_enabled_city_mappings(config_path=config_path)
 
 
+def test_validate_enabled_city_mappings_fails_for_implausible_url(tmp_path: Path) -> None:
+    config_path = _write_cities_config(
+        tmp_path,
+        [
+            {
+                "city_key": "nyc",
+                "city_name": "New York City",
+                "timezone": "America/New_York",
+                "kalshi_series_ticker": "KXHIGHNY",
+                "settlement_source_name": "National Weather Service",
+                "settlement_source_url": "not-a-url",
+                "settlement_station_id": "KLGA",
+                "settlement_station_name": "LaGuardia Airport",
+                "station_lat": 40.7769,
+                "station_lon": -73.874,
+                "enabled": True,
+            }
+        ],
+    )
+
+    with pytest.raises(StationMappingValidationError, match="implausible settlement_source_url"):
+        validate_enabled_city_mappings(config_path=config_path)
+
+
+def test_validate_enabled_city_mappings_fails_for_out_of_range_coordinates(tmp_path: Path) -> None:
+    config_path = _write_cities_config(
+        tmp_path,
+        [
+            {
+                "city_key": "nyc",
+                "city_name": "New York City",
+                "timezone": "America/New_York",
+                "kalshi_series_ticker": "KXHIGHNY",
+                "settlement_source_name": "National Weather Service",
+                "settlement_source_url": "https://forecast.weather.gov/data/obhistory/KLGA.html",
+                "settlement_station_id": "KLGA",
+                "settlement_station_name": "LaGuardia Airport",
+                "station_lat": 140.0,
+                "station_lon": -73.874,
+                "enabled": True,
+            }
+        ],
+    )
+
+    with pytest.raises(StationMappingValidationError, match="out-of-range station_lat"):
+        validate_enabled_city_mappings(config_path=config_path)
+
+
 def test_validate_enabled_city_mappings_fails_for_duplicate_enabled_city_keys(tmp_path: Path) -> None:
     config_path = _write_cities_config(
         tmp_path,

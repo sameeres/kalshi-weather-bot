@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 import pandas as pd
 
+from kwb.mapping.station_candidates import resolve_ncei_station_id
 from kwb.mapping.station_mapping import validate_enabled_city_mappings
 from kwb.settings import STAGING_DIR
 from kwb.utils.logging import get_logger
@@ -69,8 +70,9 @@ def _fetch_city_climate_normal_rows(
     ingested_at: str,
 ) -> list[dict[str, Any]]:
     station_id = city["settlement_station_id"]
+    ncei_station_id = resolve_ncei_station_id(station_id)
     payload = client.get_daily_climate_normals(
-        station_id=station_id,
+        station_id=ncei_station_id,
         start_date=DEFAULT_NORMALS_START_DATE,
         end_date=DEFAULT_NORMALS_END_DATE,
         datasetid=DEFAULT_NORMALS_DATASET,

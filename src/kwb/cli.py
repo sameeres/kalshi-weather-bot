@@ -9,6 +9,8 @@ from rich.table import Table
 from kwb.ingestion.kalshi_events import ingest_enabled_city_events, ingest_events_for_series
 from kwb.ingestion.kalshi_market_history import ingest_kalshi_market_history_for_enabled_cities
 from kwb.ingestion.climate_normals import ingest_climate_normals_for_enabled_cities
+from kwb.ingestion.build_staging import build_staging_datasets
+from kwb.ingestion.validate_staging import check_climatology_baseline_readiness, validate_staging_datasets
 from kwb.ingestion.weather_history import ingest_weather_history_for_enabled_cities
 from kwb.backtest.evaluate_climatology import ClimatologyEvaluationError, evaluate_climatology_strategy
 from kwb.backtest.evaluate_climatology_executable import (
@@ -29,7 +31,12 @@ from kwb.research.run_climatology_baseline import (
     ClimatologyResearchRunError,
     run_climatology_baseline_research,
 )
-from kwb.mapping.station_candidates import build_station_mapping_report, write_station_mapping_report
+from kwb.mapping.station_candidates import (
+    apply_station_mapping_recommendations,
+    build_station_mapping_report,
+    write_station_mapping_recommendations,
+    write_station_mapping_report,
+)
 from kwb.mapping.station_mapping import (
     StationMappingValidationError,
     validate_enabled_city_mappings,
@@ -43,6 +50,7 @@ ingest_app = typer.Typer(help="Data ingestion commands")
 station_app = typer.Typer(help="Settlement station mapping commands")
 weather_app = typer.Typer(help="Historical weather ingestion commands")
 kalshi_app = typer.Typer(help="Historical Kalshi market ingestion commands")
+data_app = typer.Typer(help="Bootstrap and validate staged baseline inputs")
 mart_app = typer.Typer(help="Mart builders for backtesting datasets")
 model_app = typer.Typer(help="Baseline research models")
 backtest_app = typer.Typer(help="Research backtests and paper-trading evaluation")
@@ -52,6 +60,7 @@ app.add_typer(ingest_app, name="ingest")
 app.add_typer(station_app, name="station")
 app.add_typer(weather_app, name="weather")
 app.add_typer(kalshi_app, name="kalshi")
+app.add_typer(data_app, name="data")
 app.add_typer(mart_app, name="mart")
 app.add_typer(model_app, name="model")
 app.add_typer(backtest_app, name="backtest")
@@ -177,6 +186,69 @@ def station_mapping_report(
     console.print(f"Saved report: {saved_path}")
 
 
+@station_app.command("recommend")
+def station_mapping_recommend(
+    config_path: str = typer.Option("", help="Optional city config path override."),
+    events_path: str = typer.Option(
+        "",
+        help="Optional staged Kalshi events parquet override for settlement-source evidence.",
+    ),
+    city_key: str = typer.Option("", help="Optional single city_key override."),
+    output_dir: str = typer.Option("", help="Optional output directory override."),
+    min_confidence: float = typer.Option(0.85, help="Minimum confidence threshold for auto-selection."),
+    write_config: bool = typer.Option(
+        False,
+        help="Opt in to writing high-confidence recommendations back to configs/cities.yml.",
+    ),
+) -> None:
+    cfg_path = Path(config_path) if config_path else CONFIG_DIR / "cities.yml"
+    evt_path = Path(events_path) if events_path else None
+    out_dir = Path(output_dir) if output_dir else None
+
+    if write_config:
+        _, updates, resolution = apply_station_mapping_recommendations(
+            config_path=cfg_path,
+            events_path=evt_path,
+            city_key=city_key or None,
+            min_confidence=min_confidence,
+        )
+        json_path, md_path, _ = write_station_mapping_recommendations(
+            config_path=cfg_path,
+            events_path=evt_path,
+            city_key=city_key or None,
+            output_dir=out_dir,
+            min_confidence=min_confidence,
+        )
+        console.print(
+            f"Saved station recommendations: json={json_path} md={md_path} "
+            f"(config updates applied: {len(updates)})"
+        )
+        if updates:
+            for update in updates:
+                console.print(
+                    f"Applied {update['city_key']}: {', '.join(sorted(update['changed_fields']))} "
+                    f"(confidence: {update['confidence']})"
+                )
+        else:
+            unresolved = [result["city_key"] for result in resolution["results"] if not result["selected_automatically"]]
+            if unresolved:
+                console.print(f"No config updates applied. Manual review required for: {', '.join(unresolved)}")
+        return
+
+    json_path, md_path, resolution = write_station_mapping_recommendations(
+        config_path=cfg_path,
+        events_path=evt_path,
+        city_key=city_key or None,
+        output_dir=out_dir,
+        min_confidence=min_confidence,
+    )
+    auto_selected = sum(1 for result in resolution["results"] if result["selected_automatically"])
+    console.print(
+        f"Saved station recommendations: json={json_path} md={md_path} "
+        f"(auto-selectable cities: {auto_selected}/{len(resolution['results'])})"
+    )
+
+
 @weather_app.command("history")
 def ingest_weather_history(
     start_date: str = typer.Option(..., help="Observation start date in YYYY-MM-DD format."),
@@ -246,22 +318,127 @@ def ingest_kalshi_history(
     interval: str = typer.Option("1h", help="Candle interval. Supported: 1m, 5m, 15m, 1h, 1d."),
     config_path: str = typer.Option("", help="Optional city config path override."),
     output_dir: str = typer.Option("", help="Optional output directory override."),
+    resume: bool = typer.Option(False, help="Resume from saved Kalshi chunk progress instead of restarting."),
+    max_retries: int = typer.Option(4, help="Maximum Kalshi retries for 429/transient failures."),
+    initial_backoff_seconds: float = typer.Option(1.0, help="Initial Kalshi retry backoff in seconds."),
+    max_backoff_seconds: float = typer.Option(30.0, help="Maximum Kalshi retry backoff in seconds."),
 ) -> None:
     cfg_path = Path(config_path) if config_path else CONFIG_DIR / "cities.yml"
     out_dir = Path(output_dir) if output_dir else None
 
-    markets_path, candles_path = ingest_kalshi_market_history_for_enabled_cities(
-        start_date=start_date,
-        end_date=end_date,
-        interval=interval,
-        config_path=cfg_path,
-        output_dir=out_dir,
-    )
+    try:
+        markets_path, candles_path, details = ingest_kalshi_market_history_for_enabled_cities(
+            start_date=start_date,
+            end_date=end_date,
+            interval=interval,
+            config_path=cfg_path,
+            output_dir=out_dir,
+            resume=resume,
+            max_retries=max_retries,
+            initial_backoff_seconds=initial_backoff_seconds,
+            max_backoff_seconds=max_backoff_seconds,
+            return_details=True,
+        )
+    except Exception as exc:
+        console.print(f"[red]Kalshi history ingestion failed[/red]\n{exc}")
+        raise typer.Exit(code=1) from exc
 
     console.print(
         f"Saved Kalshi history: markets={markets_path} candles={candles_path} "
-        f"(date range: {start_date} to {end_date}, interval: {interval})"
+        f"(date range: {start_date} to {end_date}, interval: {interval}, "
+        f"retries={details['retry_summary']['total_retries']}, "
+        f"resume_supported={details['resume_supported']})"
     )
+
+
+@data_app.command("build-staging")
+def build_staging_command(
+    dataset: list[str] | None = typer.Option(
+        None,
+        "--dataset",
+        "-d",
+        help="Dataset(s) to build. Repeat for subsets. Defaults to all required baseline datasets.",
+    ),
+    start_date: str = typer.Option("", help="Required for weather_daily and Kalshi history datasets."),
+    end_date: str = typer.Option("", help="Required for weather_daily and Kalshi history datasets."),
+    interval: str = typer.Option("1h", help="Kalshi candle interval for kalshi_candles."),
+    config_path: str = typer.Option("", help="Optional city config path override."),
+    events_path: str = typer.Option("", help="Optional staged Kalshi events parquet override for station validation."),
+    output_dir: str = typer.Option("", help="Optional staging output directory override."),
+    summary_output: str = typer.Option("", help="Optional JSON validation-summary output override."),
+    report_output: str = typer.Option("", help="Optional markdown bootstrap-report output override."),
+    overwrite: bool = typer.Option(False, help="Allow overwriting existing staged parquet files."),
+    resume: bool = typer.Option(False, help="Resume Kalshi chunked ingestion from prior partial progress."),
+    max_retries: int = typer.Option(4, help="Maximum Kalshi retries for 429/transient failures."),
+    initial_backoff_seconds: float = typer.Option(1.0, help="Initial Kalshi retry backoff in seconds."),
+    max_backoff_seconds: float = typer.Option(30.0, help="Maximum Kalshi retry backoff in seconds."),
+) -> None:
+    try:
+        summary = build_staging_datasets(
+            datasets=tuple(dataset) if dataset else ("weather_daily", "weather_normals_daily", "kalshi_markets", "kalshi_candles"),
+            config_path=Path(config_path) if config_path else CONFIG_DIR / "cities.yml",
+            staging_dir=Path(output_dir) if output_dir else None,
+            summary_output_path=Path(summary_output) if summary_output else None,
+            report_output_path=Path(report_output) if report_output else None,
+            start_date=start_date or None,
+            end_date=end_date or None,
+            interval=interval,
+            overwrite=overwrite,
+            resume=resume,
+            max_retries=max_retries,
+            initial_backoff_seconds=initial_backoff_seconds,
+            max_backoff_seconds=max_backoff_seconds,
+            events_path=Path(events_path) if events_path else None,
+        )
+    except Exception as exc:
+        console.print(f"[red]Staging build failed[/red]\n{exc}")
+        raise typer.Exit(code=1) from exc
+
+    if not summary["success"]:
+        details = "\n".join(summary.get("errors", []))
+        console.print(
+            f"[red]Staging build incomplete[/red]\n"
+            f"validation={summary['validation_summary_path']}\n"
+            f"report={summary['bootstrap_report_path']}\n"
+            f"{details}\n"
+            f"{summary['recommendation']}"
+        )
+        raise typer.Exit(code=1)
+
+    console.print(
+        f"Built staging datasets successfully: validation={summary['validation_summary_path']} "
+        f"report={summary['bootstrap_report_path']}"
+    )
+
+
+@data_app.command("validate-staging")
+def validate_staging_command(
+    dataset: list[str] | None = typer.Option(
+        None,
+        "--dataset",
+        "-d",
+        help="Dataset(s) to validate. Repeat for subsets. Defaults to all required baseline datasets.",
+    ),
+    config_path: str = typer.Option("", help="Optional city config path override."),
+    staging_dir: str = typer.Option("", help="Optional staging directory override."),
+    summary_output: str = typer.Option("", help="Optional JSON validation-summary output override."),
+) -> None:
+    summary = validate_staging_datasets(
+        datasets=tuple(dataset) if dataset else ("weather_daily", "weather_normals_daily", "kalshi_markets", "kalshi_candles"),
+        staging_dir=Path(staging_dir) if staging_dir else None,
+        config_path=Path(config_path) if config_path else CONFIG_DIR / "cities.yml",
+        summary_output_path=Path(summary_output) if summary_output else None,
+    )
+
+    status = "ready" if summary["ready"] else "not ready"
+    console.print(
+        f"Staging validation: {status} "
+        f"(station mapping ready: {summary['station_mapping']['ready']}, "
+        f"missing: {len(summary['missing_datasets'])}, invalid: {len(summary['invalid_datasets'])}) "
+        f"summary={summary['summary_output_path']}"
+    )
+    if not summary["ready"]:
+        raise typer.Exit(code=1)
 
 
 @mart_app.command("backtest-dataset")
@@ -535,6 +712,32 @@ def run_climatology_baseline_research_command(
     max_spread_grid: str = typer.Option("none,5", help="Comma-separated max_spread grid for candle_proxy mode."),
     allow_no_grid: str = typer.Option("false", help="Comma-separated allow_no grid values."),
     expanding: bool = typer.Option(True, "--expanding/--rolling", help="Use an expanding training window."),
+    validate_staging: bool = typer.Option(
+        False,
+        "--validate-staging/--no-validate-staging",
+        help="Validate required staged inputs before running the baseline bundle.",
+    ),
+    fail_fast_on_unready_staging: bool = typer.Option(
+        False,
+        "--fail-fast-on-unready-staging/--allow-unready-staging",
+        help="Stop before research execution if staged inputs are missing or malformed.",
+    ),
+    build_staging_first: bool = typer.Option(
+        False,
+        help="Explicitly build the required staged datasets before running research.",
+    ),
+    staging_start_date: str = typer.Option(
+        "",
+        help="Required with --build-staging-first for weather_daily and Kalshi history builds.",
+    ),
+    staging_end_date: str = typer.Option(
+        "",
+        help="Required with --build-staging-first for weather_daily and Kalshi history builds.",
+    ),
+    staging_interval: str = typer.Option(
+        "1h",
+        help="Kalshi candle interval to use when --build-staging-first is enabled.",
+    ),
     selection_metric: str = typer.Option(
         "total_net_pnl",
         help="Walk-forward validation objective: total_net_pnl or average_net_pnl_per_trade.",
@@ -574,6 +777,12 @@ def run_climatology_baseline_research_command(
             max_spread_grid=_parse_optional_float_grid(max_spread_grid),
             allow_no_grid=_parse_bool_grid(allow_no_grid),
             expanding=expanding,
+            validate_staging_before_run=validate_staging,
+            fail_fast_on_unready_staging=fail_fast_on_unready_staging,
+            build_staging_first=build_staging_first,
+            staging_start_date=staging_start_date or None,
+            staging_end_date=staging_end_date or None,
+            staging_interval=staging_interval,
             selection_metric=selection_metric,
         )
     except ClimatologyResearchRunError as exc:
@@ -585,6 +794,30 @@ def run_climatology_baseline_research_command(
         f"report_json={report_json_path} report_md={report_markdown_path} "
         f"(skipped steps: {len(manifest['skipped_steps'])})"
     )
+
+
+@research_app.command("check-baseline-readiness")
+def check_baseline_readiness_command(
+    config_path: str = typer.Option("", help="Optional city config path override."),
+    staging_dir: str = typer.Option("", help="Optional staging directory override."),
+    summary_output: str = typer.Option("", help="Optional JSON summary output override."),
+) -> None:
+    readiness = check_climatology_baseline_readiness(
+        staging_dir=Path(staging_dir) if staging_dir else None,
+        config_path=Path(config_path) if config_path else CONFIG_DIR / "cities.yml",
+        summary_output_path=Path(summary_output) if summary_output else None,
+    )
+
+    status = "ready" if readiness["ready"] else "not ready"
+    console.print(
+        f"Baseline readiness: {status} "
+        f"(station mapping ready: {readiness['station_mapping']['ready']}, "
+        f"missing: {len(readiness['missing_datasets'])}, invalid: {len(readiness['invalid_datasets'])}) "
+        f"summary={readiness['validation_summary_path']}\n"
+        f"{readiness['recommendation']}"
+    )
+    if not readiness["ready"]:
+        raise typer.Exit(code=1)
 
 
 def _parse_float_grid(raw: str) -> tuple[float, ...]:

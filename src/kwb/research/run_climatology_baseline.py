@@ -27,6 +27,8 @@ from kwb.backtest.walkforward_climatology import (
     WalkforwardClimatologyError,
     run_walkforward_climatology,
 )
+from kwb.ingestion.build_staging import build_staging_datasets
+from kwb.ingestion.validate_staging import check_climatology_baseline_readiness
 from kwb.marts.backtest_dataset import BacktestDatasetBuildError, build_backtest_dataset
 from kwb.models.baseline_climatology import (
     ClimatologyModelError,
@@ -84,6 +86,12 @@ def run_climatology_baseline_research(
     allow_no_grid: tuple[bool, ...] = (False,),
     expanding: bool = True,
     selection_metric: str = "total_net_pnl",
+    validate_staging_before_run: bool = False,
+    fail_fast_on_unready_staging: bool = False,
+    build_staging_first: bool = False,
+    staging_start_date: str | None = None,
+    staging_end_date: str | None = None,
+    staging_interval: str = "1h",
 ) -> tuple[Path, Path, Path, Path, dict[str, Any]]:
     """Run the full local climatology baseline research bundle and write compact reports."""
     run_started_at = datetime.now(timezone.utc)
@@ -147,9 +155,50 @@ def run_climatology_baseline_research(
             "fee_per_contract": fee_per_contract,
             "max_spread": max_spread,
         },
+        "staging_validation": {
+            "checked": False,
+            "ready": None,
+            "summary_path": None,
+            "missing_datasets": [],
+            "invalid_datasets": [],
+        },
     }
 
     try:
+        if build_staging_first:
+            build_summary = build_staging_datasets(
+                datasets=("weather_daily", "weather_normals_daily", "kalshi_markets", "kalshi_candles"),
+                config_path=config_path,
+                staging_dir=None,
+                start_date=staging_start_date,
+                end_date=staging_end_date,
+                interval=staging_interval,
+                overwrite=False,
+            )
+            manifest["staging_build"] = {
+                "attempted": True,
+                "success": build_summary["success"],
+                "validation_summary_path": build_summary["validation_summary_path"],
+                "bootstrap_report_path": build_summary["bootstrap_report_path"],
+                "errors": build_summary["errors"],
+            }
+            if not build_summary["success"]:
+                raise ClimatologyResearchRunError(_format_readiness_failure(build_summary))
+
+        if validate_staging_before_run or fail_fast_on_unready_staging or build_staging_first:
+            readiness = check_climatology_baseline_readiness(
+                config_path=config_path,
+            )
+            manifest["staging_validation"] = {
+                "checked": True,
+                "ready": readiness["ready"],
+                "summary_path": readiness["validation_summary_path"],
+                "missing_datasets": readiness["missing_datasets"],
+                "invalid_datasets": readiness["invalid_datasets"],
+            }
+            if fail_fast_on_unready_staging and not readiness["ready"]:
+                raise ClimatologyResearchRunError(_format_readiness_failure(readiness))
+
         backtest_path, backtest_stats = build_backtest_dataset(
             decision_time_local=decision_time_local,
             config_path=config_path,
@@ -459,6 +508,7 @@ def _build_research_report(
         "baseline_status_reason": baseline_reason,
         "baseline_status_criteria": baseline_criteria,
         "data_coverage": data_coverage,
+        "staging_validation": manifest.get("staging_validation"),
         "one_shot_evaluation": {
             "decision_price": simple_summary,
             "candle_proxy": executable_summary,
@@ -553,6 +603,7 @@ def _render_markdown_report(report: dict[str, Any]) -> str:
         f"- Run timestamp (UTC): `{report['run_timestamp_utc']}`",
         f"- Baseline status: `{report['baseline_status']}`",
         f"- Status note: {report['baseline_status_reason']}",
+        f"- Staging ready: `{report.get('staging_validation', {}).get('ready')}`",
         "",
         "## Data Coverage",
         "",
@@ -620,6 +671,23 @@ def _frequency_map(rows: list[dict[str, Any]], key: str) -> dict[str, int]:
         label = "null" if value is None else str(value)
         counts[label] = counts.get(label, 0) + 1
     return counts
+
+
+def _format_readiness_failure(summary: dict[str, Any]) -> str:
+    missing = summary.get("missing_datasets", [])
+    invalid = summary.get("invalid_datasets", [])
+    recommendation = summary.get("recommendation")
+    detail_lines = ["Climatology baseline staging readiness check failed."]
+    if missing:
+        detail_lines.append("Missing datasets: " + ", ".join(missing))
+    if invalid:
+        detail_lines.append("Invalid datasets: " + ", ".join(invalid))
+    summary_path = summary.get("validation_summary_path")
+    if summary_path:
+        detail_lines.append(f"Validation summary: {summary_path}")
+    if recommendation:
+        detail_lines.append(f"Next step: {recommendation}")
+    return "\n".join(detail_lines)
 
 
 def _average_numeric(rows: list[dict[str, Any]], key: str) -> float | None:

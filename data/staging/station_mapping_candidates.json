@@ -1,0 +1,83 @@
+{
+  "checked_at_utc": "2026-03-22T23:30:47.249389+00:00",
+  "city_count": 1,
+  "config_path": "/private/var/folders/vc/4dq_n3k97dngm5x8ml1jzzsr0000gn/T/pytest-of-faisalessa/pytest-42/test_station_recommend_cli_can0/cities.yml",
+  "events_path": null,
+  "min_confidence": 0.85,
+  "results": [
+    {
+      "candidate_count": 1,
+      "candidates": [
+        {
+          "city_key": "nyc",
+          "confidence_bucket": "high",
+          "confidence_score": 0.9,
+          "is_complete": true,
+          "provenance": [
+            "config",
+            "curated_station_registry"
+          ],
+          "selection_reason": "derived from authoritative settlement source URL",
+          "settlement_source_name": "National Weather Service",
+          "settlement_source_url": "https://forecast.weather.gov/data/obhistory/KLGA.html",
+          "settlement_station_id": "KLGA",
+          "settlement_station_name": "LaGuardia Airport",
+          "source_evidence": [
+            "using settlement source already present in config",
+            "parsed station id KLGA from settlement_source_url",
+            "matched station metadata registry for KLGA"
+          ],
+          "station_lat": 40.7769,
+          "station_lon": -73.874
+        }
+      ],
+      "city_key": "nyc",
+      "city_name": "New York City",
+      "current_config": {
+        "settlement_source_name": "National Weather Service",
+        "settlement_source_url": "https://forecast.weather.gov/data/obhistory/KLGA.html",
+        "settlement_station_id": "KLGA",
+        "settlement_station_name": "LaGuardia Airport",
+        "station_lat": 40.7769,
+        "station_lon": -73.874
+      },
+      "kalshi_series_ticker": "KXHIGHNY",
+      "mapping_complete": true,
+      "missing_fields": [],
+      "notes": [
+        "staged Kalshi events not available locally"
+      ],
+      "resolution_status": "configured",
+      "selected_automatically": true,
+      "selected_candidate": {
+        "city_key": "nyc",
+        "confidence_bucket": "high",
+        "confidence_score": 0.9,
+        "is_complete": true,
+        "provenance": [
+          "config",
+          "curated_station_registry"
+        ],
+        "selection_reason": "derived from authoritative settlement source URL",
+        "settlement_source_name": "National Weather Service",
+        "settlement_source_url": "https://forecast.weather.gov/data/obhistory/KLGA.html",
+        "settlement_station_id": "KLGA",
+        "settlement_station_name": "LaGuardia Airport",
+        "source_evidence": [
+          "using settlement source already present in config",
+          "parsed station id KLGA from settlement_source_url",
+          "matched station metadata registry for KLGA"
+        ],
+        "station_lat": 40.7769,
+        "station_lon": -73.874
+      },
+      "source_evidence": [
+        "using settlement source already present in config"
+      ],
+      "staged_source_name": null,
+      "staged_source_pairs_json": null,
+      "staged_source_status": "not_checked",
+      "staged_source_url": null
+    }
+  ]
+}

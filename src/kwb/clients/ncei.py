@@ -11,11 +11,15 @@ class NCEIClient:
         self.base_url = "https://www.ncei.noaa.gov/cdo-web/api/v2"
         self.timeout = timeout
         self.session = requests.Session()
-        token = os.getenv("NCEI_API_TOKEN")
-        if token:
-            self.session.headers.update({"token": token})
+        self.token = os.getenv("NCEI_API_TOKEN")
+        if self.token:
+            self.session.headers.update({"token": self.token})
 
     def _get(self, path: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
+        if not self.token:
+            raise RuntimeError(
+                "NCEI_API_TOKEN is not set. NOAA Climate Data Online requests require this token."
+            )
         url = f"{self.base_url}{path}"
         response = self.session.get(url, params=params, timeout=self.timeout)
         response.raise_for_status()

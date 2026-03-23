@@ -52,7 +52,7 @@ def test_weather_history_ingestion_succeeds_for_validated_city(
     )
     client = FakeNCEIClient(
         {
-            "KLGA": [
+            "GHCND:USW00014732": [
                 {"date": "2026-03-20T00:00:00", "datatype": "TMAX", "value": 170, "datasetid": "GHCND"},
                 {"date": "2026-03-20T00:00:00", "datatype": "TMIN", "value": 50, "datasetid": "GHCND"},
             ]
@@ -75,6 +75,7 @@ def test_weather_history_ingestion_succeeds_for_validated_city(
         client=client,
     )
 
+    assert client.calls == [("GHCND:USW00014732", "2026-03-20", "2026-03-20", "GHCND")]
     assert outpath == output_dir / "weather_daily.parquet"
     assert captured["path"] == outpath
     df = captured["df"]
@@ -130,7 +131,7 @@ def test_weather_history_temperature_conversion_is_correct(
     config_path = _write_complete_city_config(tmp_path)
     client = FakeNCEIClient(
         {
-            "KLGA": [
+            "GHCND:USW00014732": [
                 {"date": "2026-03-20T00:00:00", "datatype": "TMAX", "value": 250, "datasetid": "GHCND"},
                 {"date": "2026-03-20T00:00:00", "datatype": "TMIN", "value": 0, "datasetid": "GHCND"},
             ]
@@ -166,7 +167,7 @@ def test_weather_history_duplicate_station_date_rows_are_collapsed(
     config_path = _write_complete_city_config(tmp_path)
     client = FakeNCEIClient(
         {
-            "KLGA": [
+            "GHCND:USW00014732": [
                 {"date": "2026-03-20T00:00:00", "datatype": "TMAX", "value": 200, "datasetid": "GHCND"},
                 {"date": "2026-03-20T00:00:00", "datatype": "TMAX", "value": 210, "datasetid": "GHCND"},
                 {"date": "2026-03-20T00:00:00", "datatype": "TMIN", "value": 100, "datasetid": "GHCND"},

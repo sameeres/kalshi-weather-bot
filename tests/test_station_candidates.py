@@ -5,7 +5,11 @@ import pytest
 from typer.testing import CliRunner
 
 from kwb.cli import app
-from kwb.mapping.station_candidates import build_station_mapping_report
+from kwb.mapping.station_candidates import (
+    apply_station_mapping_recommendations,
+    build_station_mapping_report,
+    resolve_enabled_city_station_candidates,
+)
 
 
 def test_station_mapping_report_shows_missing_fields_for_incomplete_city(tmp_path: Path) -> None:
@@ -32,7 +36,7 @@ def test_station_mapping_report_shows_missing_fields_for_incomplete_city(tmp_pat
 
     assert len(report) == 1
     assert report.loc[0, "mapping_complete"] == False
-    assert report.loc[0, "validation_ready"] == False
+    assert report.loc[0, "validation_ready"] == True
     assert "settlement_station_id" in report.loc[0, "missing_fields"]
 
 
@@ -80,6 +84,8 @@ def test_station_mapping_report_includes_staged_source_context(
     assert report.loc[0, "staged_settlement_source_name"] == "National Weather Service"
     assert report.loc[0, "staged_settlement_source_url"] == "https://forecast.weather.gov/data/obhistory/KLGA.html"
     assert report.loc[0, "staged_source_status"] == "unique"
+    assert report.loc[0, "recommended_station_id"] == "KLGA"
+    assert report.loc[0, "recommendation_confidence"] >= 0.9
 
 
 def test_station_mapping_report_never_marks_incomplete_city_as_validation_ready(tmp_path: Path) -> None:
@@ -105,7 +111,63 @@ def test_station_mapping_report_never_marks_incomplete_city_as_validation_ready(
     report = build_station_mapping_report(config_path=config_path)
 
     assert report.loc[0, "mapping_complete"] == False
-    assert report.loc[0, "validation_ready"] == False
+    assert report.loc[0, "validation_ready"] == True
+
+
+def test_station_resolution_uses_series_hint_when_events_are_missing(tmp_path: Path) -> None:
+    config_path = _write_cities_config(
+        tmp_path,
+        [
+            {
+                "city_key": "nyc",
+                "city_name": "New York City",
+                "timezone": "America/New_York",
+                "kalshi_series_ticker": "KXHIGHNY",
+                "settlement_source_name": None,
+                "settlement_source_url": None,
+                "settlement_station_id": None,
+                "settlement_station_name": None,
+                "station_lat": None,
+                "station_lon": None,
+                "enabled": True,
+            }
+        ],
+    )
+
+    resolution = resolve_enabled_city_station_candidates(config_path=config_path)
+
+    assert resolution["results"][0]["selected_candidate"]["settlement_station_id"] == "KLGA"
+    assert resolution["results"][0]["selected_candidate"]["settlement_station_name"] == "LaGuardia Airport"
+    assert resolution["results"][0]["selected_automatically"] is True
+
+
+def test_apply_station_mapping_recommendations_updates_config(tmp_path: Path) -> None:
+    config_path = _write_cities_config(
+        tmp_path,
+        [
+            {
+                "city_key": "nyc",
+                "city_name": "New York City",
+                "timezone": "America/New_York",
+                "kalshi_series_ticker": "KXHIGHNY",
+                "settlement_source_name": None,
+                "settlement_source_url": None,
+                "settlement_station_id": None,
+                "settlement_station_name": None,
+                "station_lat": None,
+                "station_lon": None,
+                "enabled": True,
+            }
+        ],
+    )
+
+    _, updates, _ = apply_station_mapping_recommendations(config_path=config_path)
+
+    assert len(updates) == 1
+    updated = Path(config_path).read_text(encoding="utf-8")
+    assert "settlement_station_id: KLGA" in updated
+    assert "settlement_station_name: LaGuardia Airport" in updated
+    assert "settlement_source_url: https://forecast.weather.gov/data/obhistory/KLGA.html" in updated
 
 
 def test_station_mapping_report_cli_writes_csv(tmp_path: Path) -> None:
@@ -148,6 +210,35 @@ def test_station_mapping_report_cli_writes_csv(tmp_path: Path) -> None:
 
     report = pd.read_csv(output_path)
     assert report.loc[0, "city_key"] == "nyc"
+
+
+def test_station_recommend_cli_can_write_config(tmp_path: Path) -> None:
+    config_path = _write_cities_config(
+        tmp_path,
+        [
+            {
+                "city_key": "nyc",
+                "city_name": "New York City",
+                "timezone": "America/New_York",
+                "kalshi_series_ticker": "KXHIGHNY",
+                "settlement_source_name": None,
+                "settlement_source_url": None,
+                "settlement_station_id": None,
+                "settlement_station_name": None,
+                "station_lat": None,
+                "station_lon": None,
+                "enabled": True,
+            }
+        ],
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(app, ["station", "recommend", "--config-path", str(config_path), "--write-config"])
+
+    assert result.exit_code == 0
+    assert "config updates applied: 1" in result.stdout
+    payload = Path(config_path).read_text(encoding="utf-8")
+    assert "settlement_station_id: KLGA" in payload
 
 
 def _write_cities_config(tmp_path: Path, cities: list[dict]) -> Path:
