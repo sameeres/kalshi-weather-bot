@@ -1,0 +1,246 @@
+{
+  "baseline_status": "weak",
+  "baseline_status_criteria": {
+    "primary_mode": "candle_proxy",
+    "promising_requires": {
+      "average_net_pnl_per_trade_positive": true,
+      "folds_scored_at_least": 2,
+      "hit_rate_at_least": 0.5,
+      "total_net_pnl_positive": true,
+      "trades_taken_at_least": 10,
+      "yes_quote_coverage_at_least_for_candle_proxy": 0.8
+    },
+    "weak_if_any": [
+      "no_scored_folds",
+      "no_trades",
+      "non_positive_total_net_pnl"
+    ]
+  },
+  "baseline_status_reason": "candle_proxy walk-forward produced no scored folds.",
+  "data_coverage": {
+    "cities_covered": [],
+    "date_range": {
+      "end": null,
+      "start": null
+    },
+    "quote_coverage": {},
+    "rows_scored": 0,
+    "spread_coverage": {}
+  },
+  "model_name": "baseline_climatology_v1",
+  "one_shot_evaluation": {
+    "candle_proxy": {
+      "allow_no": false,
+      "average_edge_at_entry": 0.0,
+      "average_gross_pnl_per_trade": 0.0,
+      "average_lookback_sample_size": 0.0,
+      "average_net_pnl_per_trade": 0.0,
+      "average_no_spread": null,
+      "average_yes_spread": null,
+      "both_sides_quote_coverage": 0.0,
+      "brier_score": 0.0,
+      "contracts": 1,
+      "entry_price_bucket_counts": {
+        "0-25": 0,
+        "25-50": 0,
+        "50-75": 0,
+        "75-100": 0
+      },
+      "fee_per_contract": 0.0,
+      "hit_rate": 0.0,
+      "max_price": 100.0,
+      "max_spread": null,
+      "min_edge": 0.0,
+      "min_price": 0.0,
+      "min_samples": 1,
+      "no_quote_coverage": 0.0,
+      "no_trades_taken": 0,
+      "pricing_mode": "candle_proxy",
+      "quote_source": "decision_candle_ohlc_bounds",
+      "rows_available": 0,
+      "rows_missing_executable_no_quote": 0,
+      "rows_missing_executable_yes_quote": 0,
+      "rows_scored": 0,
+      "rows_with_both_sides_executable_quotes": 0,
+      "rows_with_executable_no_quote": 0,
+      "rows_with_executable_yes_quote": 0,
+      "spread_bucket_counts": {
+        "0-2": 0,
+        "10+": 0,
+        "2-5": 0,
+        "5-10": 0
+      },
+      "total_gross_pnl": 0.0,
+      "total_net_pnl": 0.0,
+      "trades_taken": 0,
+      "uses_true_quotes": false,
+      "yes_quote_coverage": 0.0,
+      "yes_trades_taken": 0
+    },
+    "comparison": {
+      "delta_executable_minus_decision_price": {
+        "average_edge_at_entry_delta": 0.0,
+        "brier_score_delta": 0.0,
+        "hit_rate_delta": 0.0,
+        "no_trades_taken_delta": 0.0,
+        "rows_available_delta": 0.0,
+        "rows_scored_delta": 0.0,
+        "total_gross_pnl_delta": 0.0,
+        "total_net_pnl_delta": 0.0,
+        "trades_taken_delta": 0.0,
+        "yes_trades_taken_delta": 0.0
+      },
+      "modes": [
+        {
+          "allow_no": false,
+          "average_edge_at_entry": 0.0,
+          "average_lookback_sample_size": 0.0,
+          "average_pnl_per_trade": 0.0,
+          "brier_score": 0.0,
+          "contracts": 1,
+          "entry_price_bucket_counts": {
+            "0-25": 0,
+            "25-50": 0,
+            "50-75": 0,
+            "75-100": 0
+          },
+          "fee_per_contract": 0.0,
+          "hit_rate": 0.0,
+          "max_price": 100.0,
+          "min_edge": 0.0,
+          "min_price": 0.0,
+          "min_samples": 1,
+          "no_trades_taken": 0,
+          "pricing_mode": "decision_price",
+          "quote_source": "decision_price_close",
+          "rows_available": 0,
+          "rows_scored": 0,
+          "total_gross_pnl": 0.0,
+          "total_net_pnl": 0.0,
+          "trades_taken": 0,
+          "uses_true_quotes": false,
+          "yes_trades_taken": 0
+        },
+        {
+          "allow_no": false,
+          "average_edge_at_entry": 0.0,
+          "average_gross_pnl_per_trade": 0.0,
+          "average_lookback_sample_size": 0.0,
+          "average_net_pnl_per_trade": 0.0,
+          "average_no_spread": null,
+          "average_yes_spread": null,
+          "both_sides_quote_coverage": 0.0,
+          "brier_score": 0.0,
+          "contracts": 1,
+          "entry_price_bucket_counts": {
+            "0-25": 0,
+            "25-50": 0,
+            "50-75": 0,
+            "75-100": 0
+          },
+          "fee_per_contract": 0.0,
+          "hit_rate": 0.0,
+          "max_price": 100.0,
+          "max_spread": null,
+          "min_edge": 0.0,
+          "min_price": 0.0,
+          "min_samples": 1,
+          "no_quote_coverage": 0.0,
+          "no_trades_taken": 0,
+          "pricing_mode": "candle_proxy",
+          "quote_source": "decision_candle_ohlc_bounds",
+          "rows_available": 0,
+          "rows_missing_executable_no_quote": 0,
+          "rows_missing_executable_yes_quote": 0,
+          "rows_scored": 0,
+          "rows_with_both_sides_executable_quotes": 0,
+          "rows_with_executable_no_quote": 0,
+          "rows_with_executable_yes_quote": 0,
+          "spread_bucket_counts": {
+            "0-2": 0,
+            "10+": 0,
+            "2-5": 0,
+            "5-10": 0
+          },
+          "total_gross_pnl": 0.0,
+          "total_net_pnl": 0.0,
+          "trades_taken": 0,
+          "uses_true_quotes": false,
+          "yes_quote_coverage": 0.0,
+          "yes_trades_taken": 0
+        }
+      ],
+      "quote_audit": {
+        "best_local_quote_source": "candlestick_ohlcv",
+        "has_candle_history": true,
+        "has_orderbook_history": false,
+        "has_trade_history": false,
+        "has_true_historical_best_bid_ask": false,
+        "local_quote_limitations": [
+          "No historical best-bid/best-ask snapshots are staged locally.",
+          "No order-book depth history is staged locally.",
+          "Executable backtests must use candle-derived quote proxies unless richer local data is added."
+        ]
+      }
+    },
+    "decision_price": {
+      "allow_no": false,
+      "average_edge_at_entry": 0.0,
+      "average_lookback_sample_size": 0.0,
+      "average_pnl_per_trade": 0.0,
+      "brier_score": 0.0,
+      "contracts": 1,
+      "entry_price_bucket_counts": {
+        "0-25": 0,
+        "25-50": 0,
+        "50-75": 0,
+        "75-100": 0
+      },
+      "fee_per_contract": 0.0,
+      "hit_rate": 0.0,
+      "max_price": 100.0,
+      "min_edge": 0.0,
+      "min_price": 0.0,
+      "min_samples": 1,
+      "no_trades_taken": 0,
+      "pricing_mode": "decision_price",
+      "quote_source": "decision_price_close",
+      "rows_available": 0,
+      "rows_scored": 0,
+      "total_gross_pnl": 0.0,
+      "total_net_pnl": 0.0,
+      "trades_taken": 0,
+      "uses_true_quotes": false,
+      "yes_trades_taken": 0
+    }
+  },
+  "pricing_modes_run": [
+    "decision_price",
+    "candle_proxy"
+  ],
+  "run_timestamp_utc": "2026-03-24T11:18:06.420551+00:00",
+  "skipped_steps": [
+    {
+      "reason": "No valid walk-forward folds could be created from the scored dataset and requested window sizes.",
+      "status": "skipped",
+      "step": "walkforward_climatology"
+    }
+  ],
+  "staging_validation": {
+    "checked": true,
+    "invalid_datasets": [],
+    "missing_datasets": [],
+    "ready": true,
+    "summary_path": "/Users/faisalessa/kalshi-weather-bot/data/staging/staging_validation_summary.json"
+  },
+  "walkforward_evaluation": {
+    "aggregate_by_pricing_mode": {},
+    "diagnostic_highlights": {},
+    "folds_preview": [],
+    "summary": null,
+    "threshold_stability": {
+      "available": false,
+      "results_by_pricing_mode": {}
+    }
+  }
+}

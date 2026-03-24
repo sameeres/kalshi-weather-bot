@@ -1,0 +1,30 @@
+{
+  "allow_no": false,
+  "average_edge_at_entry": 0.923824,
+  "average_lookback_sample_size": 1.0,
+  "average_pnl_per_trade": 0.853235,
+  "brier_score": 0.024074,
+  "contracts": 1,
+  "entry_price_bucket_counts": {
+    "0-25": 78,
+    "25-50": 3,
+    "50-75": 2,
+    "75-100": 2
+  },
+  "fee_per_contract": 0.0,
+  "hit_rate": 0.929412,
+  "max_price": 100.0,
+  "min_edge": 0.0,
+  "min_price": 0.0,
+  "min_samples": 1,
+  "no_trades_taken": 0,
+  "pricing_mode": "decision_price",
+  "quote_source": "decision_price_close",
+  "rows_available": 540,
+  "rows_scored": 540,
+  "total_gross_pnl": 72.525,
+  "total_net_pnl": 72.525,
+  "trades_taken": 85,
+  "uses_true_quotes": false,
+  "yes_trades_taken": 85
+}

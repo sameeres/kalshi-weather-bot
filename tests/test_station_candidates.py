@@ -84,8 +84,9 @@ def test_station_mapping_report_includes_staged_source_context(
     assert report.loc[0, "staged_settlement_source_name"] == "National Weather Service"
     assert report.loc[0, "staged_settlement_source_url"] == "https://forecast.weather.gov/data/obhistory/KLGA.html"
     assert report.loc[0, "staged_source_status"] == "unique"
-    assert report.loc[0, "recommended_station_id"] == "KLGA"
+    assert report.loc[0, "recommended_station_id"] == "KNYC"
     assert report.loc[0, "recommendation_confidence"] >= 0.9
+    assert "explicit_settlement_override" in report.loc[0, "recommendation_provenance"]
 
 
 def test_station_mapping_report_never_marks_incomplete_city_as_validation_ready(tmp_path: Path) -> None:
@@ -136,9 +137,57 @@ def test_station_resolution_uses_series_hint_when_events_are_missing(tmp_path: P
 
     resolution = resolve_enabled_city_station_candidates(config_path=config_path)
 
-    assert resolution["results"][0]["selected_candidate"]["settlement_station_id"] == "KLGA"
-    assert resolution["results"][0]["selected_candidate"]["settlement_station_name"] == "LaGuardia Airport"
+    assert resolution["results"][0]["selected_candidate"]["settlement_station_id"] == "KNYC"
+    assert resolution["results"][0]["selected_candidate"]["settlement_station_name"] == "Central Park"
     assert resolution["results"][0]["selected_automatically"] is True
+    assert "settlement-alignment override" in resolution["results"][0]["selected_candidate"]["selection_reason"]
+
+
+def test_station_resolution_override_beats_staged_laguardia_source(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config_path = _write_cities_config(
+        tmp_path,
+        [
+            {
+                "city_key": "nyc",
+                "city_name": "New York City",
+                "timezone": "America/New_York",
+                "kalshi_series_ticker": "KXHIGHNY",
+                "settlement_source_name": None,
+                "settlement_source_url": None,
+                "settlement_station_id": None,
+                "settlement_station_name": None,
+                "station_lat": None,
+                "station_lon": None,
+                "enabled": True,
+            }
+        ],
+    )
+    events_path = tmp_path / "kalshi_events.parquet"
+    events_path.write_text("placeholder", encoding="utf-8")
+
+    monkeypatch.setattr(
+        pd,
+        "read_parquet",
+        lambda _: pd.DataFrame(
+            [
+                {
+                    "city_key": "nyc",
+                    "settlement_source_name": "National Weather Service",
+                    "settlement_source_url": "https://forecast.weather.gov/data/obhistory/KLGA.html",
+                }
+            ]
+        ),
+    )
+
+    resolution = resolve_enabled_city_station_candidates(config_path=config_path, events_path=events_path)
+
+    selected = resolution["results"][0]["selected_candidate"]
+    assert selected["settlement_station_id"] == "KNYC"
+    assert selected["settlement_station_name"] == "Central Park"
+    assert "explicit_settlement_override" in selected["provenance"]
 
 
 def test_apply_station_mapping_recommendations_updates_config(tmp_path: Path) -> None:
@@ -165,9 +214,9 @@ def test_apply_station_mapping_recommendations_updates_config(tmp_path: Path) ->
 
     assert len(updates) == 1
     updated = Path(config_path).read_text(encoding="utf-8")
-    assert "settlement_station_id: KLGA" in updated
-    assert "settlement_station_name: LaGuardia Airport" in updated
-    assert "settlement_source_url: https://forecast.weather.gov/data/obhistory/KLGA.html" in updated
+    assert "settlement_station_id: KNYC" in updated
+    assert "settlement_station_name: Central Park" in updated
+    assert "settlement_source_url: https://forecast.weather.gov/data/obhistory/KNYC.html" in updated
 
 
 def test_station_mapping_report_cli_writes_csv(tmp_path: Path) -> None:
@@ -238,7 +287,7 @@ def test_station_recommend_cli_can_write_config(tmp_path: Path) -> None:
     assert result.exit_code == 0
     assert "config updates applied: 1" in result.stdout
     payload = Path(config_path).read_text(encoding="utf-8")
-    assert "settlement_station_id: KLGA" in payload
+    assert "settlement_station_id: KNYC" in payload
 
 
 def _write_cities_config(tmp_path: Path, cities: list[dict]) -> Path:

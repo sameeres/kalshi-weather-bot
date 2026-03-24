@@ -6,6 +6,7 @@ from typer.testing import CliRunner
 import kwb.cli as cli_module
 from kwb.cli import app
 from kwb.ingestion.build_staging import build_staging_datasets
+from kwb.ingestion.weather_history import _iter_observation_request_windows
 from kwb.ingestion.validate_staging import (
     check_climatology_baseline_readiness,
     validate_staging_datasets,
@@ -19,6 +20,7 @@ class FakeNCEIClient:
         start_date: str,
         end_date: str,
         datasetid: str = "GHCND",
+        datatypeids: list[str] | None = None,
         units: str = "metric",
         limit: int = 1000,
         offset: int = 1,
@@ -131,6 +133,58 @@ def test_build_staging_datasets_succeeds_from_minimal_inputs(tmp_path: Path) -> 
     assert (staging_dir / "kalshi_candles.parquet").exists()
     assert (staging_dir / "staging_validation_summary.json").exists()
     assert (staging_dir / "staging_bootstrap_report.md").exists()
+
+
+def test_build_staging_can_use_deeper_weather_window_than_kalshi_window(tmp_path: Path) -> None:
+    class TrackingNCEIClient(FakeNCEIClient):
+        def __init__(self) -> None:
+            self.weather_calls: list[tuple[str, str, str, str]] = []
+
+        def get_daily_station_observations(
+            self,
+            station_id: str,
+            start_date: str,
+            end_date: str,
+            datasetid: str = "GHCND",
+            datatypeids: list[str] | None = None,
+            units: str = "metric",
+            limit: int = 1000,
+            offset: int = 1,
+        ) -> dict:
+            self.weather_calls.append((station_id, start_date, end_date, datasetid))
+            return super().get_daily_station_observations(
+                station_id=station_id,
+                start_date=start_date,
+                end_date=end_date,
+                datasetid=datasetid,
+                datatypeids=datatypeids,
+                units=units,
+                limit=limit,
+                offset=offset,
+            )
+
+    config_path = _write_complete_city_config(tmp_path)
+    staging_dir = tmp_path / "staging"
+    ncei_client = TrackingNCEIClient()
+    build_staging_datasets(
+        config_path=config_path,
+        staging_dir=staging_dir,
+        start_date="2026-03-20",
+        end_date="2026-03-20",
+        weather_start_date="2016-03-20",
+        weather_end_date="2026-03-20",
+        ncei_client=ncei_client,
+        kalshi_client=FakeKalshiClient(),
+    )
+
+    assert ncei_client.weather_calls == [
+        ("GHCND:USW00014732", chunk_start, chunk_end, "GHCND")
+        for chunk_start, chunk_end in _iter_observation_request_windows(
+            start_date="2016-03-20",
+            end_date="2026-03-20",
+            datasetid="GHCND",
+        )
+    ]
 
 
 def test_validate_staging_passes_for_good_datasets(tmp_path: Path) -> None:
@@ -277,9 +331,7 @@ def _write_good_weather(staging_dir: Path) -> None:
                 "city_key": "nyc",
                 "obs_date": "2026-03-20",
                 "tmax_c": 21.0,
-                "tmin_c": 10.0,
                 "tmax_f": 69.8,
-                "tmin_f": 50.0,
                 "source_dataset": "GHCND",
                 "ingested_at": "2026-03-20T00:00:00+00:00",
             }
@@ -370,4 +422,3 @@ def _write_complete_city_config(tmp_path: Path) -> Path:
         encoding="utf-8",
     )
     return path
-

@@ -302,6 +302,19 @@ def _attach_decision_candles(markets_df: pd.DataFrame, candles_df: pd.DataFrame)
             candle_intervals.append(None)
             continue
 
+        eligible = eligible.loc[
+            eligible["close"].notna() & eligible["high"].notna() & eligible["low"].notna()
+        ]
+        if eligible.empty:
+            decision_candle_ts.append(None)
+            decision_prices.append(None)
+            yes_bids.append(None)
+            yes_asks.append(None)
+            no_bids.append(None)
+            no_asks.append(None)
+            candle_intervals.append(None)
+            continue
+
         latest = eligible.iloc[-1]
         yes_bid, yes_ask, no_bid, no_ask = _derive_executable_quotes(latest)
         decision_candle_ts.append(latest["candle_ts"].isoformat())

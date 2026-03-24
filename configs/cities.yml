@@ -4,11 +4,11 @@ cities:
     timezone: America/New_York
     kalshi_series_ticker: KXHIGHNY
     settlement_source_name: National Weather Service
-    settlement_station_id: KLGA
-    settlement_station_name: LaGuardia Airport
-    settlement_source_url: https://forecast.weather.gov/data/obhistory/KLGA.html
-    station_lat: 40.7769
-    station_lon: -73.874
+    settlement_station_id: KNYC
+    settlement_station_name: Central Park
+    settlement_source_url: https://forecast.weather.gov/data/obhistory/KNYC.html
+    station_lat: 40.7789
+    station_lon: -73.9692
     enabled: true
 
   - city_key: chicago

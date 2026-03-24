@@ -31,6 +31,7 @@ class NCEIClient:
         start_date: str,
         end_date: str,
         datasetid: str = "GHCND",
+        datatypeids: list[str] | None = None,
         units: str = "metric",
         limit: int = 1000,
         offset: int = 1,
@@ -44,6 +45,8 @@ class NCEIClient:
             "limit": limit,
             "offset": offset,
         }
+        if datatypeids:
+            params["datatypeid"] = datatypeids
         return self._get("/data", params=params)
 
     def get_daily_climate_normals(

@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -149,6 +150,140 @@ class FlakyKalshiHistoryClient(FakeKalshiHistoryClient):
             period_interval=period_interval,
             include_latest_before_start=include_latest_before_start,
         )
+
+
+class MixedUniverseKalshiHistoryClient(FakeKalshiHistoryClient):
+    def get_events(
+        self,
+        series_ticker: str | None = None,
+        limit: int = 200,
+        cursor: str | None = None,
+        with_nested_markets: bool = False,
+    ) -> dict:
+        self.event_calls.append((series_ticker, cursor))
+        return {
+            "events": [
+                {"event_ticker": "HIGHNY-24AUG15"},
+                {"event_ticker": "KXHIGHNY-25DEC01"},
+                {"event_ticker": "KXHIGHNY-26APR01"},
+            ]
+        }
+
+    def list_markets(
+        self,
+        series_ticker: str | None = None,
+        event_ticker: str | None = None,
+        limit: int = 200,
+        cursor: str | None = None,
+    ) -> dict:
+        self.market_calls.append((series_ticker, cursor))
+        return {
+            "markets": [
+                {
+                    "event_ticker": "HIGHNY-24AUG15",
+                    "ticker": "HIGHNY-24AUG15-T80",
+                    "title": "legacy",
+                    "subtitle": ">80",
+                    "status": "settled",
+                    "strike_type": "greater",
+                    "close_time": "2024-08-16T03:59:00Z",
+                },
+                {
+                    "event_ticker": "KXHIGHNY-25DEC01",
+                    "ticker": "KXHIGHNY-25DEC01-B40.5",
+                    "title": "in window",
+                    "subtitle": "40 to 41",
+                    "status": "settled",
+                    "strike_type": "between",
+                    "close_time": "2025-12-02T04:59:00Z",
+                },
+                {
+                    "event_ticker": "KXHIGHNY-26APR01",
+                    "ticker": "KXHIGHNY-26APR01-B60.5",
+                    "title": "out of window",
+                    "subtitle": "60 to 61",
+                    "status": "active",
+                    "strike_type": "between",
+                    "close_time": "2026-04-02T03:59:00Z",
+                },
+            ]
+        }
+
+    def get_market_candlesticks(
+        self,
+        series_ticker: str,
+        market_ticker: str,
+        start_ts: int,
+        end_ts: int,
+        period_interval: int,
+        include_latest_before_start: bool = False,
+    ) -> dict:
+        self.candle_calls.append((series_ticker, market_ticker, period_interval))
+        return {
+            "candlesticks": [
+                {
+                    "end_period_ts": 1764637200,
+                    "open": 40,
+                    "high": 42,
+                    "low": 39,
+                    "close": 41,
+                    "volume": 12,
+                }
+            ]
+        }
+
+
+class EmptyCandleKalshiHistoryClient(FakeKalshiHistoryClient):
+    def get_market_candlesticks(
+        self,
+        series_ticker: str,
+        market_ticker: str,
+        start_ts: int,
+        end_ts: int,
+        period_interval: int,
+        include_latest_before_start: bool = False,
+    ) -> dict:
+        self.candle_calls.append((series_ticker, market_ticker, period_interval))
+        return {"candlesticks": []}
+
+
+class NestedPriceKalshiHistoryClient(FakeKalshiHistoryClient):
+    def get_market_candlesticks(
+        self,
+        series_ticker: str,
+        market_ticker: str,
+        start_ts: int,
+        end_ts: int,
+        period_interval: int,
+        include_latest_before_start: bool = False,
+    ) -> dict:
+        self.candle_calls.append((series_ticker, market_ticker, period_interval))
+        return {
+            "candlesticks": [
+                {
+                    "end_period_ts": 1773968400,
+                    "price": {
+                        "open_dollars": "0.4200",
+                        "close_dollars": "0.4400",
+                        "high_dollars": "0.4700",
+                        "low_dollars": "0.4100",
+                    },
+                    "yes_bid": {
+                        "open_dollars": "0.3900",
+                        "close_dollars": "0.4100",
+                        "high_dollars": "0.4100",
+                        "low_dollars": "0.3900",
+                    },
+                    "yes_ask": {
+                        "open_dollars": "0.4500",
+                        "close_dollars": "0.4700",
+                        "high_dollars": "0.4700",
+                        "low_dollars": "0.4500",
+                    },
+                    "volume_fp": "11.00",
+                }
+            ]
+        }
 
 
 def test_kalshi_market_history_ingestion_succeeds_for_enabled_series(tmp_path: Path) -> None:
@@ -331,6 +466,88 @@ def test_kalshi_market_history_persists_partial_progress_and_resumes(tmp_path: P
     assert sum(call[1] == "KXHIGHNY-26MAR21-B70" for call in resumed_client.candle_calls) == 1
     assert pd.read_parquet(markets_path).shape[0] == 2
     assert pd.read_parquet(candles_path).shape[0] == 2
+
+
+def test_kalshi_market_history_filters_to_supported_ticker_era_and_date_window(tmp_path: Path) -> None:
+    config_path = _write_single_enabled_city(tmp_path)
+    client = MixedUniverseKalshiHistoryClient()
+
+    markets_path, candles_path = ingest_kalshi_market_history_for_enabled_cities(
+        start_date="2025-12-01",
+        end_date="2025-12-01",
+        interval="1h",
+        config_path=config_path,
+        output_dir=tmp_path,
+        client=client,
+    )
+
+    markets_df = pd.read_parquet(markets_path)
+    candles_df = pd.read_parquet(candles_path)
+    assert list(markets_df["market_ticker"]) == ["KXHIGHNY-25DEC01-B40.5"]
+    assert list(candles_df["market_ticker"].unique()) == ["KXHIGHNY-25DEC01-B40.5"]
+    assert markets_df.loc[0, "strike_date"] == "2025-12-01T00:00:00Z"
+
+
+def test_kalshi_market_history_uses_close_time_to_normalize_event_date(tmp_path: Path) -> None:
+    config_path = _write_single_enabled_city(tmp_path)
+    client = MixedUniverseKalshiHistoryClient()
+
+    markets_path, _ = ingest_kalshi_market_history_for_enabled_cities(
+        start_date="2025-12-01",
+        end_date="2025-12-01",
+        interval="1h",
+        config_path=config_path,
+        output_dir=tmp_path,
+        client=client,
+    )
+
+    markets_df = pd.read_parquet(markets_path)
+    assert markets_df.loc[0, "strike_date"] == "2025-12-01T00:00:00Z"
+
+
+def test_zero_row_candle_chunks_are_marked_failed_not_complete(tmp_path: Path) -> None:
+    config_path = _write_single_enabled_city(tmp_path)
+    client = EmptyCandleKalshiHistoryClient()
+
+    try:
+        ingest_kalshi_market_history_for_enabled_cities(
+            start_date="2026-03-20",
+            end_date="2026-03-21",
+            interval="1h",
+            config_path=config_path,
+            output_dir=tmp_path,
+            client=client,
+        )
+    except KalshiHistoryIngestionError as exc:
+        details = exc.details
+    else:  # pragma: no cover
+        raise AssertionError("Expected KalshiHistoryIngestionError")
+
+    manifest = json.loads((tmp_path / DEFAULT_KALSHI_HISTORY_MANIFEST_FILENAME).read_text(encoding="utf-8"))
+    assert details["failed_candle_chunks"] == 1
+    assert details["completed_candle_chunks"] == 0
+    assert manifest["candle_chunks"]["KXHIGHNY-26MAR20-B65"]["status"] == "failed"
+
+
+def test_kalshi_market_history_parses_nested_live_candle_fields(tmp_path: Path) -> None:
+    config_path = _write_single_enabled_city(tmp_path)
+    client = NestedPriceKalshiHistoryClient()
+
+    _, candles_path = ingest_kalshi_market_history_for_enabled_cities(
+        start_date="2026-03-20",
+        end_date="2026-03-21",
+        interval="1h",
+        config_path=config_path,
+        output_dir=tmp_path,
+        client=client,
+    )
+
+    candles_df = pd.read_parquet(candles_path)
+    assert candles_df.loc[0, "open"] == 42.0
+    assert candles_df.loc[0, "close"] == 44.0
+    assert candles_df.loc[0, "low"] == 41.0
+    assert candles_df.loc[0, "high"] == 47.0
+    assert candles_df.loc[0, "volume"] == 11.0
 
 
 def test_kalshi_client_retries_429_then_succeeds(monkeypatch) -> None:

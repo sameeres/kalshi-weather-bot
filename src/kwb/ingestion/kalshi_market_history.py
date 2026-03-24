@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, time, timezone
+import re
+from datetime import date, datetime, time, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 
@@ -21,6 +23,21 @@ DEFAULT_CANDLES_FILENAME = "kalshi_candles.parquet"
 DEFAULT_KALSHI_HISTORY_CHUNKS_DIRNAME = "kalshi_history_chunks"
 DEFAULT_KALSHI_HISTORY_MANIFEST_FILENAME = "kalshi_history_manifest.json"
 INTERVAL_TO_MINUTES = {"1m": 1, "5m": 5, "15m": 15, "1h": 60, "1d": 1440}
+MONTH_ABBREVIATIONS = {
+    "JAN": 1,
+    "FEB": 2,
+    "MAR": 3,
+    "APR": 4,
+    "MAY": 5,
+    "JUN": 6,
+    "JUL": 7,
+    "AUG": 8,
+    "SEP": 9,
+    "OCT": 10,
+    "NOV": 11,
+    "DEC": 12,
+}
+TICKER_EVENT_DATE_PATTERN = re.compile(r"^[A-Z]+-(\d{2})([A-Z]{3})(\d{2})(?:-|$)")
 
 
 class KalshiHistoryIngestionError(RuntimeError):
@@ -110,6 +127,8 @@ def ingest_kalshi_market_history_for_enabled_cities(
             city_market_rows = _get_or_build_market_chunk(
                 client=client,
                 city=city,
+                start_date=start_date,
+                end_date=end_date,
                 ingested_at=ingested_at,
                 chunk_dir=chunk_dir,
                 manifest=manifest,
@@ -222,6 +241,8 @@ def summarize_kalshi_history_manifest(output_dir: Path | None = None) -> dict[st
 def _get_or_build_market_chunk(
     client: "KalshiClient",
     city: dict[str, Any],
+    start_date: str,
+    end_date: str,
     ingested_at: str,
     chunk_dir: Path,
     manifest: dict[str, Any],
@@ -254,6 +275,8 @@ def _get_or_build_market_chunk(
             client=client,
             city=city,
             event_index=event_index,
+            start_date=start_date,
+            end_date=end_date,
             ingested_at=ingested_at,
         )
         _write_parquet(_build_markets_frame(rows), chunk_path)
@@ -305,8 +328,13 @@ def _get_or_build_candle_chunk(
     )
 
     if resume and manifest_entry.get("status") == "complete" and chunk_path.exists():
-        logger.info("Resuming Kalshi candles from existing chunk for market_ticker=%s", market_ticker)
-        return
+        if int(manifest_entry.get("row_count") or 0) > 0:
+            logger.info("Resuming Kalshi candles from existing chunk for market_ticker=%s", market_ticker)
+            return
+        logger.warning(
+            "Retrying prior zero-row candle chunk for market_ticker=%s instead of treating it as complete",
+            market_ticker,
+        )
 
     try:
         rows = _fetch_candle_rows_for_market(
@@ -318,6 +346,11 @@ def _get_or_build_candle_chunk(
             interval=interval,
             ingested_at=ingested_at,
         )
+        if not rows:
+            raise ValueError(
+                "No candle rows returned for "
+                f"market_ticker={market_ticker} in requested date range {start_date}..{end_date}."
+            )
         _write_parquet(_build_candles_frame(rows), chunk_path)
         manifest_entry["status"] = "complete"
         manifest_entry["row_count"] = len(rows)
@@ -371,6 +404,8 @@ def _fetch_market_rows_for_series(
     client: "KalshiClient",
     city: dict[str, Any],
     event_index: dict[str, dict[str, Any]],
+    start_date: str,
+    end_date: str,
     ingested_at: str,
 ) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
@@ -391,13 +426,20 @@ def _fetch_market_rows_for_series(
         for market in page_markets:
             if not isinstance(market, dict):
                 continue
-            rows.append(_build_market_row(city=city, market=market, event_index=event_index, ingested_at=ingested_at))
+            row = _build_market_row(city=city, market=market, event_index=event_index, ingested_at=ingested_at)
+            if row is not None:
+                rows.append(row)
 
         cursor = payload.get("cursor")
         if not cursor:
             break
 
-    return rows
+    return _filter_market_rows_to_supported_window(
+        rows=rows,
+        city=city,
+        start_date=start_date,
+        end_date=end_date,
+    )
 
 
 def _build_market_row(
@@ -405,15 +447,24 @@ def _build_market_row(
     market: dict[str, Any],
     event_index: dict[str, dict[str, Any]],
     ingested_at: str,
-) -> dict[str, Any]:
+) -> dict[str, Any] | None:
     event_ticker = market.get("event_ticker")
     event_summary = event_index.get(event_ticker or "", {})
+    market_ticker = market.get("ticker") or market.get("market_ticker")
+    if not market_ticker:
+        return None
     return {
         "city_key": city.get("city_key"),
         "series_ticker": city.get("kalshi_series_ticker"),
         "event_ticker": event_ticker,
-        "market_ticker": market.get("ticker") or market.get("market_ticker"),
-        "strike_date": event_summary.get("strike_date") or market.get("strike_date"),
+        "market_ticker": market_ticker,
+        "strike_date": _resolve_market_strike_date(
+            city=city,
+            event_summary=event_summary,
+            market=market,
+            event_ticker=event_ticker,
+            market_ticker=market_ticker,
+        ),
         "market_title": market.get("title"),
         "market_subtitle": market.get("subtitle") or market.get("sub_title"),
         "status": market.get("status"),
@@ -460,11 +511,11 @@ def _fetch_candle_rows_for_market(
                 "market_ticker": market_ticker,
                 "city_key": city.get("city_key"),
                 "candle_ts": _normalize_candle_ts(candle),
-                "open": candle.get("open"),
-                "high": candle.get("high"),
-                "low": candle.get("low"),
-                "close": candle.get("close"),
-                "volume": candle.get("volume"),
+                "open": _extract_candle_open_cents(candle),
+                "high": _extract_candle_high_cents(candle),
+                "low": _extract_candle_low_cents(candle),
+                "close": _extract_candle_close_cents(candle),
+                "volume": _extract_candle_volume(candle),
                 "interval": interval,
                 "ingested_at": ingested_at,
             }
@@ -551,10 +602,214 @@ def _normalize_candle_ts(candle: dict[str, Any]) -> str | None:
     return datetime.fromtimestamp(timestamp, tz=timezone.utc).isoformat()
 
 
+def _extract_candle_open_cents(candle: dict[str, Any]) -> float | None:
+    direct = _coerce_cents_value(candle.get("open"))
+    if direct is not None:
+        return direct
+    price_value = _extract_nested_dollars_as_cents(candle, "price", "open_dollars")
+    if price_value is not None:
+        return price_value
+    return _midpoint_cents(
+        _extract_nested_dollars_as_cents(candle, "yes_bid", "open_dollars"),
+        _extract_nested_dollars_as_cents(candle, "yes_ask", "open_dollars"),
+    )
+
+
+def _extract_candle_close_cents(candle: dict[str, Any]) -> float | None:
+    direct = _coerce_cents_value(candle.get("close"))
+    if direct is not None:
+        return direct
+    price_value = _extract_nested_dollars_as_cents(candle, "price", "close_dollars")
+    if price_value is not None:
+        return price_value
+    return _midpoint_cents(
+        _extract_nested_dollars_as_cents(candle, "yes_bid", "close_dollars"),
+        _extract_nested_dollars_as_cents(candle, "yes_ask", "close_dollars"),
+    )
+
+
+def _extract_candle_high_cents(candle: dict[str, Any]) -> float | None:
+    direct = _coerce_cents_value(candle.get("high"))
+    if direct is not None:
+        return direct
+    ask_close = _extract_nested_dollars_as_cents(candle, "yes_ask", "close_dollars")
+    if ask_close is not None:
+        return ask_close
+    return _extract_nested_dollars_as_cents(candle, "price", "high_dollars")
+
+
+def _extract_candle_low_cents(candle: dict[str, Any]) -> float | None:
+    direct = _coerce_cents_value(candle.get("low"))
+    if direct is not None:
+        return direct
+    bid_close = _extract_nested_dollars_as_cents(candle, "yes_bid", "close_dollars")
+    if bid_close is not None:
+        return bid_close
+    return _extract_nested_dollars_as_cents(candle, "price", "low_dollars")
+
+
+def _extract_candle_volume(candle: dict[str, Any]) -> float | None:
+    direct = candle.get("volume")
+    if isinstance(direct, (int, float)):
+        return float(direct)
+    volume_fp = candle.get("volume_fp")
+    if volume_fp in (None, ""):
+        return None
+    try:
+        return float(volume_fp)
+    except (TypeError, ValueError):
+        raise TypeError(f"Expected numeric candle volume, got {volume_fp!r}") from None
+
+
+def _extract_nested_dollars_as_cents(candle: dict[str, Any], parent_key: str, child_key: str) -> float | None:
+    nested = candle.get(parent_key)
+    if not isinstance(nested, dict):
+        return None
+    raw_value = nested.get(child_key)
+    if raw_value in (None, ""):
+        return None
+    try:
+        return round(float(raw_value) * 100.0, 6)
+    except (TypeError, ValueError):
+        raise TypeError(f"Expected dollar string for {parent_key}.{child_key}, got {raw_value!r}") from None
+
+
+def _coerce_cents_value(value: Any) -> float | None:
+    if value in (None, "") or pd.isna(value):
+        return None
+    if not isinstance(value, (int, float)):
+        raise TypeError(f"Expected numeric candle field, got {value!r}")
+    return round(float(value), 6)
+
+
+def _midpoint_cents(bid_cents: float | None, ask_cents: float | None) -> float | None:
+    if bid_cents is None or ask_cents is None:
+        return None
+    return round((bid_cents + ask_cents) / 2.0, 6)
+
+
 def _date_range_to_unix_bounds(start_date: str, end_date: str) -> tuple[int, int]:
     start_dt = datetime.combine(datetime.fromisoformat(start_date).date(), time.min, tzinfo=timezone.utc)
     end_dt = datetime.combine(datetime.fromisoformat(end_date).date(), time.max, tzinfo=timezone.utc)
     return int(start_dt.timestamp()), int(end_dt.timestamp())
+
+
+def _filter_market_rows_to_supported_window(
+    rows: list[dict[str, Any]],
+    city: dict[str, Any],
+    start_date: str,
+    end_date: str,
+) -> list[dict[str, Any]]:
+    series_ticker = str(city.get("kalshi_series_ticker") or "")
+    start = date.fromisoformat(start_date)
+    end = date.fromisoformat(end_date)
+    filtered_rows: list[dict[str, Any]] = []
+
+    for row in rows:
+        market_ticker = str(row.get("market_ticker") or "")
+        if not _market_ticker_matches_series(market_ticker, series_ticker):
+            continue
+        strike_dt = _parse_iso_datetime(row.get("strike_date"))
+        if strike_dt is None:
+            continue
+        if start <= strike_dt.date() <= end:
+            filtered_rows.append(row)
+
+    return filtered_rows
+
+
+def _market_ticker_matches_series(market_ticker: str, series_ticker: str) -> bool:
+    return bool(market_ticker and series_ticker and market_ticker.startswith(f"{series_ticker}-"))
+
+
+def _resolve_market_strike_date(
+    city: dict[str, Any],
+    event_summary: dict[str, Any],
+    market: dict[str, Any],
+    event_ticker: Any,
+    market_ticker: Any,
+) -> str | None:
+    timezone_name = city.get("timezone")
+    for raw in (event_summary.get("strike_date"), market.get("strike_date")):
+        normalized = _normalize_strike_datetime(raw, timezone_name)
+        if normalized is not None:
+            return normalized
+
+    for raw in (market.get("close_time"), market.get("close_ts"), market.get("expiration_ts")):
+        normalized = _timestamp_to_event_date_iso(raw, timezone_name)
+        if normalized is not None:
+            return normalized
+
+    for raw in (event_ticker, market_ticker):
+        normalized = _ticker_to_event_date_iso(raw)
+        if normalized is not None:
+            return normalized
+
+    return None
+
+
+def _normalize_strike_datetime(raw: Any, timezone_name: str | None) -> str | None:
+    dt = _parse_iso_datetime(raw)
+    if dt is None:
+        return None
+    if dt.timetz().replace(tzinfo=None) == time.min:
+        return _date_to_utc_midnight_iso(dt.date())
+    return _timestamp_to_event_date_iso(raw, timezone_name)
+
+
+def _timestamp_to_event_date_iso(raw: Any, timezone_name: str | None) -> str | None:
+    dt = _parse_iso_datetime(raw)
+    if dt is None:
+        return None
+    try:
+        local_zone = ZoneInfo(timezone_name) if timezone_name else timezone.utc
+    except Exception:
+        local_zone = timezone.utc
+    return _date_to_utc_midnight_iso(dt.astimezone(local_zone).date())
+
+
+def _ticker_to_event_date_iso(raw: Any) -> str | None:
+    if raw in (None, ""):
+        return None
+    match = TICKER_EVENT_DATE_PATTERN.match(str(raw))
+    if match is None:
+        return None
+    year_suffix, month_token, day_token = match.groups()
+    month = MONTH_ABBREVIATIONS.get(month_token.upper())
+    if month is None:
+        return None
+    try:
+        parsed_date = date(2000 + int(year_suffix), month, int(day_token))
+    except ValueError:
+        return None
+    return _date_to_utc_midnight_iso(parsed_date)
+
+
+def _parse_iso_datetime(raw: Any) -> datetime | None:
+    if raw in (None, ""):
+        return None
+    if isinstance(raw, datetime):
+        dt = raw
+    elif isinstance(raw, str):
+        value = raw.strip()
+        if not value:
+            return None
+        if value.endswith("Z"):
+            value = value[:-1] + "+00:00"
+        try:
+            dt = datetime.fromisoformat(value)
+        except ValueError:
+            return None
+    else:
+        return None
+
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
+def _date_to_utc_midnight_iso(value: date) -> str:
+    return datetime.combine(value, time.min, tzinfo=timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 def _build_kalshi_client(

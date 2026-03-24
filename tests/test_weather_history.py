@@ -5,14 +5,17 @@ import pytest
 from typer.testing import CliRunner
 
 from kwb.cli import app
-from kwb.ingestion.weather_history import ingest_weather_history_for_enabled_cities
+from kwb.ingestion.weather_history import (
+    _iter_observation_request_windows,
+    ingest_weather_history_for_enabled_cities,
+)
 from kwb.mapping.station_mapping import StationMappingValidationError
 
 
 class FakeNCEIClient:
     def __init__(self, responses: dict[str, list[dict]]) -> None:
         self.responses = responses
-        self.calls: list[tuple[str, str, str, str]] = []
+        self.calls: list[tuple[str, str, str, str, tuple[str, ...]]] = []
 
     def get_daily_station_observations(
         self,
@@ -20,11 +23,12 @@ class FakeNCEIClient:
         start_date: str,
         end_date: str,
         datasetid: str = "GHCND",
+        datatypeids: list[str] | None = None,
         units: str = "metric",
         limit: int = 1000,
         offset: int = 1,
     ) -> dict:
-        self.calls.append((station_id, start_date, end_date, datasetid))
+        self.calls.append((station_id, start_date, end_date, datasetid, tuple(datatypeids or [])))
         return {"results": self.responses.get(station_id, [])}
 
 
@@ -54,7 +58,6 @@ def test_weather_history_ingestion_succeeds_for_validated_city(
         {
             "GHCND:USW00014732": [
                 {"date": "2026-03-20T00:00:00", "datatype": "TMAX", "value": 170, "datasetid": "GHCND"},
-                {"date": "2026-03-20T00:00:00", "datatype": "TMIN", "value": 50, "datasetid": "GHCND"},
             ]
         }
     )
@@ -75,7 +78,7 @@ def test_weather_history_ingestion_succeeds_for_validated_city(
         client=client,
     )
 
-    assert client.calls == [("GHCND:USW00014732", "2026-03-20", "2026-03-20", "GHCND")]
+    assert client.calls == [("GHCND:USW00014732", "2026-03-20", "2026-03-20", "GHCND", ("TMAX",))]
     assert outpath == output_dir / "weather_daily.parquet"
     assert captured["path"] == outpath
     df = captured["df"]
@@ -84,9 +87,7 @@ def test_weather_history_ingestion_succeeds_for_validated_city(
         "city_key",
         "obs_date",
         "tmax_c",
-        "tmin_c",
         "tmax_f",
-        "tmin_f",
         "source_dataset",
         "ingested_at",
     ]
@@ -133,7 +134,6 @@ def test_weather_history_temperature_conversion_is_correct(
         {
             "GHCND:USW00014732": [
                 {"date": "2026-03-20T00:00:00", "datatype": "TMAX", "value": 250, "datasetid": "GHCND"},
-                {"date": "2026-03-20T00:00:00", "datatype": "TMIN", "value": 0, "datasetid": "GHCND"},
             ]
         }
     )
@@ -156,8 +156,6 @@ def test_weather_history_temperature_conversion_is_correct(
     df = captured["df"]
     assert df.loc[0, "tmax_c"] == 25.0
     assert df.loc[0, "tmax_f"] == 77.0
-    assert df.loc[0, "tmin_c"] == 0.0
-    assert df.loc[0, "tmin_f"] == 32.0
 
 
 def test_weather_history_duplicate_station_date_rows_are_collapsed(
@@ -170,7 +168,6 @@ def test_weather_history_duplicate_station_date_rows_are_collapsed(
             "GHCND:USW00014732": [
                 {"date": "2026-03-20T00:00:00", "datatype": "TMAX", "value": 200, "datasetid": "GHCND"},
                 {"date": "2026-03-20T00:00:00", "datatype": "TMAX", "value": 210, "datasetid": "GHCND"},
-                {"date": "2026-03-20T00:00:00", "datatype": "TMIN", "value": 100, "datasetid": "GHCND"},
             ]
         }
     )
@@ -193,6 +190,163 @@ def test_weather_history_duplicate_station_date_rows_are_collapsed(
     df = captured["df"]
     assert len(df) == 1
     assert df.loc[0, "tmax_c"] == 21.0
+
+
+def test_weather_history_fetches_all_pages_for_longer_history(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class PagingFakeNCEIClient(FakeNCEIClient):
+        def get_daily_station_observations(
+            self,
+            station_id: str,
+            start_date: str,
+            end_date: str,
+            datasetid: str = "GHCND",
+            datatypeids: list[str] | None = None,
+            units: str = "metric",
+            limit: int = 1000,
+            offset: int = 1,
+        ) -> dict:
+            self.calls.append((station_id, start_date, end_date, datasetid, tuple(datatypeids or [])))
+            if offset == 1:
+                return {
+                    "results": [
+                        {"date": "2026-03-20T00:00:00", "datatype": "TMAX", "value": 170, "datasetid": datasetid},
+                    ]
+                    * limit
+                }
+            return {
+                "results": [
+                    {"date": "2026-03-21T00:00:00", "datatype": "TMAX", "value": 180, "datasetid": datasetid},
+                    {"date": "2026-03-21T00:00:00", "datatype": "TMIN", "value": 80, "datasetid": datasetid},
+                ]
+            }
+
+    config_path = _write_complete_city_config(tmp_path)
+    client = PagingFakeNCEIClient({})
+    captured: dict[str, pd.DataFrame] = {}
+
+    monkeypatch.setattr(
+        pd.DataFrame,
+        "to_parquet",
+        lambda self, path, index=False: captured.setdefault("df", self.copy()),
+    )
+
+    ingest_weather_history_for_enabled_cities(
+        start_date="2016-03-20",
+        end_date="2026-03-21",
+        config_path=config_path,
+        output_dir=tmp_path,
+        client=client,
+    )
+
+    df = captured["df"]
+    assert len(df) == 2
+    assert sorted(df["obs_date"].tolist()) == ["2026-03-20", "2026-03-21"]
+
+
+def test_weather_history_chunks_multi_year_ghcnd_requests() -> None:
+    assert _iter_observation_request_windows(
+        start_date="2015-01-01",
+        end_date="2017-02-03",
+        datasetid="GHCND",
+    ) == [
+        ("2015-01-01", "2015-12-31"),
+        ("2016-01-01", "2016-12-31"),
+        ("2017-01-01", "2017-02-03"),
+    ]
+
+
+def test_weather_history_chunks_leap_year_boundaries_correctly() -> None:
+    assert _iter_observation_request_windows(
+        start_date="2016-02-29",
+        end_date="2017-03-02",
+        datasetid="GHCND",
+    ) == [
+        ("2016-02-29", "2017-02-27"),
+        ("2017-02-28", "2017-03-02"),
+    ]
+
+
+def test_weather_history_paginates_within_each_chunk_and_recombines(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class ChunkedPagingFakeNCEIClient(FakeNCEIClient):
+        def __init__(self) -> None:
+            super().__init__({})
+            self.call_details: list[tuple[str, str, str, str, int, int]] = []
+
+        def get_daily_station_observations(
+            self,
+            station_id: str,
+            start_date: str,
+            end_date: str,
+            datasetid: str = "GHCND",
+            datatypeids: list[str] | None = None,
+            units: str = "metric",
+            limit: int = 1000,
+            offset: int = 1,
+        ) -> dict:
+            self.calls.append((station_id, start_date, end_date, datasetid, tuple(datatypeids or [])))
+            self.call_details.append((station_id, start_date, end_date, datasetid, tuple(datatypeids or []), limit, offset))
+
+            responses: dict[tuple[str, str, int], list[dict[str, object]]] = {
+                (
+                    "2015-01-01",
+                    "2015-12-31",
+                    1,
+                ): [
+                    {"date": "2015-01-01T00:00:00", "datatype": "TMAX", "value": 100, "datasetid": datasetid},
+                ]
+                * limit,
+                (
+                    "2015-01-01",
+                    "2015-12-31",
+                    1001,
+                ): [
+                    {"date": "2015-01-01T00:00:00", "datatype": "TMAX", "value": 100, "datasetid": datasetid},
+                    {"date": "2015-01-01T00:00:00", "datatype": "TMAX", "value": 110, "datasetid": datasetid},
+                ],
+                (
+                    "2016-01-01",
+                    "2016-01-02",
+                    1,
+                ): [
+                    {"date": "2016-01-02T00:00:00", "datatype": "TMAX", "value": 120, "datasetid": datasetid},
+                ],
+            }
+            return {"results": responses.get((start_date, end_date, offset), [])}
+
+    config_path = _write_complete_city_config(tmp_path)
+    client = ChunkedPagingFakeNCEIClient()
+    captured: dict[str, pd.DataFrame] = {}
+
+    monkeypatch.setattr(
+        pd.DataFrame,
+        "to_parquet",
+        lambda self, path, index=False: captured.setdefault("df", self.copy()),
+    )
+
+    ingest_weather_history_for_enabled_cities(
+        start_date="2015-01-01",
+        end_date="2016-01-02",
+        config_path=config_path,
+        output_dir=tmp_path,
+        client=client,
+    )
+
+    assert client.call_details == [
+        ("GHCND:USW00014732", "2015-01-01", "2015-12-31", "GHCND", ("TMAX",), 1000, 1),
+        ("GHCND:USW00014732", "2015-01-01", "2015-12-31", "GHCND", ("TMAX",), 1000, 1001),
+        ("GHCND:USW00014732", "2016-01-01", "2016-01-02", "GHCND", ("TMAX",), 1000, 1),
+    ]
+
+    df = captured["df"]
+    assert sorted(df["obs_date"].tolist()) == ["2015-01-01", "2016-01-02"]
+    assert df.loc[df["obs_date"] == "2015-01-01", "tmax_c"].item() == 11.0
+    assert df.loc[df["obs_date"] == "2016-01-02", "tmax_c"].item() == 12.0
 
 
 def test_weather_history_cli_fails_cleanly_when_mapping_incomplete(tmp_path: Path) -> None:

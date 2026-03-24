@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from statistics import median
 from typing import Any
@@ -63,8 +63,8 @@ def run_climatology_baseline_research(
     markets_path: Path | None = None,
     candles_path: Path | None = None,
     history_path: Path | None = None,
-    day_window: int = 0,
-    min_lookback_samples: int = 1,
+    day_window: int = 1,
+    min_lookback_samples: int = 30,
     min_edge: float = 0.0,
     min_samples: int = 1,
     min_price: float = 0.0,
@@ -91,6 +91,8 @@ def run_climatology_baseline_research(
     build_staging_first: bool = False,
     staging_start_date: str | None = None,
     staging_end_date: str | None = None,
+    staging_weather_start_date: str | None = None,
+    staging_weather_end_date: str | None = None,
     staging_interval: str = "1h",
 ) -> tuple[Path, Path, Path, Path, dict[str, Any]]:
     """Run the full local climatology baseline research bundle and write compact reports."""
@@ -172,6 +174,8 @@ def run_climatology_baseline_research(
                 staging_dir=None,
                 start_date=staging_start_date,
                 end_date=staging_end_date,
+                weather_start_date=staging_weather_start_date or _default_weather_history_start_date(staging_end_date),
+                weather_end_date=staging_weather_end_date or staging_end_date,
                 interval=staging_interval,
                 overwrite=False,
             )
@@ -370,6 +374,18 @@ def run_climatology_baseline_research(
 
     logger.info("Saved climatology baseline research bundle to %s", run_dir)
     return run_dir, manifest_path, report_json_path, report_markdown_path, manifest
+
+
+def _default_weather_history_start_date(staging_end_date: str | None, lookback_years: int = 10) -> str | None:
+    if staging_end_date is None:
+        return None
+    end = date.fromisoformat(staging_end_date)
+    try:
+        start = end.replace(year=end.year - lookback_years)
+    except ValueError:
+        # Handle leap-day rollover conservatively.
+        start = end.replace(month=2, day=28, year=end.year - lookback_years)
+    return start.isoformat()
 
 
 def _prepare_run_directory(output_dir: Path | None, overwrite: bool, run_started_at: datetime) -> Path:

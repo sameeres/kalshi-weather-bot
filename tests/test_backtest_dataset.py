@@ -148,6 +148,65 @@ def test_backtest_dataset_excludes_candles_after_decision_time(
     assert df.loc[0, "decision_price"] == 43
 
 
+def test_backtest_dataset_ignores_placeholder_candles_and_uses_latest_priced_row(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config_path = _write_single_city_config(tmp_path)
+    staging_dir = _write_staged_placeholders(tmp_path)
+    captured: dict[str, pd.DataFrame] = {}
+    frames = _base_frames()
+    frames["kalshi_candles.parquet"] = pd.DataFrame(
+        [
+            {
+                "market_ticker": "KXHIGHNY-26MAR20-B65",
+                "city_key": "nyc",
+                "candle_ts": "2026-03-20T13:00:00+00:00",
+                "open": 40,
+                "high": 45,
+                "low": 39,
+                "close": 44,
+                "volume": 10,
+                "interval": "1h",
+                "ingested_at": "2026-03-20T13:00:00+00:00",
+            },
+            {
+                "market_ticker": "KXHIGHNY-26MAR20-B65",
+                "city_key": "nyc",
+                "candle_ts": "2026-03-20T14:00:00+00:00",
+                "open": None,
+                "high": None,
+                "low": None,
+                "close": None,
+                "volume": 0,
+                "interval": "1h",
+                "ingested_at": "2026-03-20T14:00:00+00:00",
+            },
+        ]
+    )
+
+    monkeypatch.setattr(pd, "read_parquet", lambda path: frames[Path(path).name].copy())
+    monkeypatch.setattr(
+        pd.DataFrame,
+        "to_parquet",
+        lambda self, path, index=False: captured.setdefault("df", self.copy()),
+    )
+
+    build_backtest_dataset(
+        decision_time_local="10:00",
+        config_path=config_path,
+        weather_path=staging_dir / "weather_daily.parquet",
+        normals_path=staging_dir / "weather_normals_daily.parquet",
+        markets_path=staging_dir / "kalshi_markets.parquet",
+        candles_path=staging_dir / "kalshi_candles.parquet",
+        output_dir=tmp_path,
+    )
+
+    df = captured["df"]
+    assert df.loc[0, "decision_candle_ts"] == "2026-03-20T13:00:00+00:00"
+    assert df.loc[0, "decision_price"] == 44
+
+
 def test_backtest_dataset_joins_weather_and_normals_correctly(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -351,9 +410,7 @@ def test_backtest_dataset_city_timezone_handling_changes_decision_ts(
                     "city_key": "chicago",
                     "obs_date": "2026-03-20",
                     "tmax_c": 21.0,
-                    "tmin_c": 10.0,
                     "tmax_f": 70.0,
-                    "tmin_f": 50.0,
                     "source_dataset": "GHCND",
                     "ingested_at": "2026-03-20T00:00:00+00:00",
                 }
@@ -477,9 +534,7 @@ def _base_frames() -> dict[str, pd.DataFrame]:
                     "city_key": "nyc",
                     "obs_date": "2026-03-20",
                     "tmax_c": 21.111,
-                    "tmin_c": 10.0,
                     "tmax_f": 70.0,
-                    "tmin_f": 50.0,
                     "source_dataset": "GHCND",
                     "ingested_at": "2026-03-20T00:00:00+00:00",
                 }

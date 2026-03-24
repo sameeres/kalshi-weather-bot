@@ -42,6 +42,8 @@ def build_staging_datasets(
     report_output_path: Path | None = None,
     start_date: str | None = None,
     end_date: str | None = None,
+    weather_start_date: str | None = None,
+    weather_end_date: str | None = None,
     interval: str = "1h",
     overwrite: bool = False,
     resume: bool = False,
@@ -67,6 +69,8 @@ def build_staging_datasets(
         "requested_datasets": list(datasets),
         "start_date": start_date,
         "end_date": end_date,
+        "weather_start_date": weather_start_date,
+        "weather_end_date": weather_end_date,
         "interval": interval,
         "overwrite": overwrite,
         "resume": resume,
@@ -90,8 +94,8 @@ def build_staging_datasets(
                 outpath = staging_dir / DATASET_SPECS["weather_daily"]["filename"]
                 _maybe_fail_on_existing(outpath, overwrite)
                 built_path = ingest_weather_history_for_enabled_cities(
-                    start_date=start_date or "",
-                    end_date=end_date or "",
+                    start_date=weather_start_date or start_date or "",
+                    end_date=weather_end_date or end_date or "",
                     config_path=config_path,
                     output_dir=staging_dir,
                     events_path=events_path,

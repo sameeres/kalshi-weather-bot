@@ -32,6 +32,13 @@ STATION_ID_PATTERN = re.compile(r"^[A-Z0-9:-]{3,24}$")
 # Provenance is recorded in recommendation outputs so this does not silently masquerade as
 # dynamically discovered upstream metadata.
 KNOWN_STATION_METADATA: dict[str, dict[str, Any]] = {
+    "KNYC": {
+        "station_name": "Central Park",
+        "station_lat": 40.7789,
+        "station_lon": -73.9692,
+        "ncei_station_id": "GHCND:USW00094728",
+        "metadata_provenance": "curated_station_registry",
+    },
     "KLGA": {
         "station_name": "LaGuardia Airport",
         "station_lat": 40.7769,
@@ -47,6 +54,18 @@ SERIES_SOURCE_HINTS: dict[str, dict[str, Any]] = {
         "settlement_source_name": "National Weather Service",
         "settlement_source_url": "https://forecast.weather.gov/data/obhistory/KLGA.html",
         "source_provenance": "curated_series_source_hint",
+    }
+}
+
+# Explicit settlement overrides must take precedence over generic source-url parsing or nearest-airport
+# heuristics. Kalshi settlement alignment is more important than geographic convenience.
+EXPLICIT_SETTLEMENT_OVERRIDES: dict[tuple[str, str], dict[str, Any]] = {
+    ("nyc", "KXHIGHNY"): {
+        "settlement_source_name": "National Weather Service",
+        "settlement_source_url": "https://forecast.weather.gov/data/obhistory/KNYC.html",
+        "settlement_station_id": "KNYC",
+        "selection_reason": "explicit settlement-alignment override for Kalshi Central Park temperature markets",
+        "override_provenance": "explicit_settlement_override",
     }
 }
 
@@ -318,10 +337,62 @@ def _resolve_city_station_mapping(
 
 
 def _generate_candidates_for_city(city: dict[str, Any], source_context: dict[str, Any]) -> list[dict[str, Any]]:
+    override_candidate = _candidate_from_explicit_override(city=city, source_context=source_context)
+    if override_candidate is not None:
+        return [override_candidate]
     candidate = _candidate_from_source_context(city=city, source_context=source_context)
     if candidate is None:
         return []
     return [candidate]
+
+
+def _candidate_from_explicit_override(city: dict[str, Any], source_context: dict[str, Any]) -> dict[str, Any] | None:
+    override = EXPLICIT_SETTLEMENT_OVERRIDES.get(
+        (
+            str(city.get("city_key") or ""),
+            str(city.get("kalshi_series_ticker") or ""),
+        )
+    )
+    if override is None:
+        return None
+
+    station_id = str(override["settlement_station_id"]).upper()
+    metadata = KNOWN_STATION_METADATA.get(station_id, {})
+    evidence = list(source_context["evidence"])
+    evidence.append("applied explicit settlement override before generic station heuristics")
+    if source_context["effective_source_url"]:
+        evidence.append(
+            "override takes precedence because Kalshi settlement alignment outranks nearest-airport/source-url heuristics"
+        )
+
+    provenance = [override["override_provenance"]]
+    if metadata.get("metadata_provenance"):
+        provenance.append(metadata["metadata_provenance"])
+
+    return {
+        "city_key": city.get("city_key"),
+        "settlement_source_name": override["settlement_source_name"],
+        "settlement_source_url": override["settlement_source_url"],
+        "settlement_station_id": station_id,
+        "settlement_station_name": metadata.get("station_name"),
+        "station_lat": metadata.get("station_lat"),
+        "station_lon": metadata.get("station_lon"),
+        "confidence_score": 0.99,
+        "confidence_bucket": "high",
+        "selection_reason": override["selection_reason"],
+        "source_evidence": evidence,
+        "provenance": provenance,
+        "is_complete": all(
+            value not in (None, "")
+            for value in [
+                override["settlement_source_url"],
+                station_id,
+                metadata.get("station_name"),
+                metadata.get("station_lat"),
+                metadata.get("station_lon"),
+            ]
+        ),
+    }
 
 
 def _candidate_from_source_context(city: dict[str, Any], source_context: dict[str, Any]) -> dict[str, Any] | None:

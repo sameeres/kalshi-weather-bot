@@ -361,6 +361,8 @@ def build_staging_command(
     ),
     start_date: str = typer.Option("", help="Required for weather_daily and Kalshi history datasets."),
     end_date: str = typer.Option("", help="Required for weather_daily and Kalshi history datasets."),
+    weather_start_date: str = typer.Option("", help="Optional weather_daily-specific start date override."),
+    weather_end_date: str = typer.Option("", help="Optional weather_daily-specific end date override."),
     interval: str = typer.Option("1h", help="Kalshi candle interval for kalshi_candles."),
     config_path: str = typer.Option("", help="Optional city config path override."),
     events_path: str = typer.Option("", help="Optional staged Kalshi events parquet override for station validation."),
@@ -382,6 +384,8 @@ def build_staging_command(
             report_output_path=Path(report_output) if report_output else None,
             start_date=start_date or None,
             end_date=end_date or None,
+            weather_start_date=weather_start_date or None,
+            weather_end_date=weather_end_date or None,
             interval=interval,
             overwrite=overwrite,
             resume=resume,
@@ -690,8 +694,8 @@ def run_climatology_baseline_research_command(
     markets_path: str = typer.Option("", help="Optional staged kalshi_markets parquet override."),
     candles_path: str = typer.Option("", help="Optional staged kalshi_candles parquet override."),
     history_path: str = typer.Option("", help="Optional climatology history parquet override."),
-    day_window: int = typer.Option(0, help="Day-of-year half-window around month_day for the climatology sample."),
-    min_lookback_samples: int = typer.Option(1, help="Minimum required historical samples to score a row."),
+    day_window: int = typer.Option(1, help="Day-of-year half-window around month_day for the climatology sample."),
+    min_lookback_samples: int = typer.Option(30, help="Minimum required historical samples to score a row."),
     min_edge: float = typer.Option(0.0, help="Minimum one-shot trade edge."),
     min_samples: int = typer.Option(1, help="Minimum one-shot lookback sample size."),
     min_price: float = typer.Option(0.0, help="Minimum one-shot entry price in cents."),
@@ -733,6 +737,14 @@ def run_climatology_baseline_research_command(
     staging_end_date: str = typer.Option(
         "",
         help="Required with --build-staging-first for weather_daily and Kalshi history builds.",
+    ),
+    staging_weather_start_date: str = typer.Option(
+        "",
+        help="Optional weather_daily-specific start date when --build-staging-first is enabled. Defaults to 10 years before staging_end_date.",
+    ),
+    staging_weather_end_date: str = typer.Option(
+        "",
+        help="Optional weather_daily-specific end date when --build-staging-first is enabled. Defaults to staging_end_date.",
     ),
     staging_interval: str = typer.Option(
         "1h",
@@ -782,6 +794,8 @@ def run_climatology_baseline_research_command(
             build_staging_first=build_staging_first,
             staging_start_date=staging_start_date or None,
             staging_end_date=staging_end_date or None,
+            staging_weather_start_date=staging_weather_start_date or None,
+            staging_weather_end_date=staging_weather_end_date or None,
             staging_interval=staging_interval,
             selection_metric=selection_metric,
         )

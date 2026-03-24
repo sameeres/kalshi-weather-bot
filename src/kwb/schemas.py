@@ -34,9 +34,7 @@ class WeatherDaily:
     city_key: str
     obs_date: date
     tmax_c: Optional[float]
-    tmin_c: Optional[float]
     tmax_f: Optional[float]
-    tmin_f: Optional[float]
     source_dataset: str
     ingested_at: datetime
 
