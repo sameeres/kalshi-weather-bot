@@ -98,6 +98,47 @@ class KalshiCandle:
 
 
 @dataclass
+class KalshiMarketMicrostructureSnapshot:
+    snapshot_ts: datetime
+    city_key: str
+    series_ticker: str
+    event_ticker: Optional[str]
+    market_ticker: str
+    strike_date: Optional[datetime]
+    floor_strike: Optional[float]
+    cap_strike: Optional[float]
+    strike_type: Optional[str]
+    market_status: Optional[str]
+    best_yes_bid_cents: Optional[float]
+    best_yes_ask_cents: Optional[float]
+    best_no_bid_cents: Optional[float]
+    best_no_ask_cents: Optional[float]
+    orderbook_available: bool
+    quote_source: str
+    tick_size: Optional[float]
+    price_level_structure: Optional[str]
+    ingested_at: datetime
+
+
+@dataclass
+class KalshiOrderbookLevel:
+    snapshot_ts: datetime
+    city_key: str
+    series_ticker: str
+    event_ticker: Optional[str]
+    market_ticker: str
+    market_status: Optional[str]
+    side: str
+    level_rank: int
+    price_cents: float
+    quantity: float
+    orderbook_depth_requested: int
+    tick_size: Optional[float]
+    price_level_structure: Optional[str]
+    ingested_at: datetime
+
+
+@dataclass
 class BucketProbability:
     market_ticker: str
     decision_ts: datetime
@@ -218,6 +259,43 @@ class ClimatologyExecutableTradeRow:
     gross_pnl: float
     net_pnl: float
     lookback_sample_size: int
+    model_name: str
+
+
+@dataclass
+class PaperClimatologyEvaluationRow:
+    snapshot_ts: datetime
+    evaluation_ts: datetime
+    city_key: str
+    series_ticker: str
+    event_ticker: Optional[str]
+    market_ticker: str
+    event_date: Optional[date]
+    market_status: Optional[str]
+    market_title: Optional[str]
+    market_subtitle: Optional[str]
+    contract_type: Optional[str]
+    chosen_side: str
+    gate_passed: bool
+    take_paper_trade: bool
+    rejection_reasons: str
+    entry_price_cents: Optional[float]
+    entry_price_bucket: Optional[str]
+    best_yes_bid_cents: Optional[float]
+    best_yes_ask_cents: Optional[float]
+    best_no_bid_cents: Optional[float]
+    best_no_ask_cents: Optional[float]
+    quote_source: str
+    orderbook_available: bool
+    yes_spread_cents: Optional[float]
+    fair_yes: Optional[float]
+    fair_no: Optional[float]
+    model_prob_yes: Optional[float]
+    model_prob_no: Optional[float]
+    gross_edge_yes: Optional[float]
+    net_edge_yes: Optional[float]
+    estimated_fees_dollars: Optional[float]
+    lookback_sample_size: Optional[int]
     model_name: str
 
 

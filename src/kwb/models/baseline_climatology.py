@@ -19,6 +19,8 @@ DEFAULT_BACKTEST_MART_PATH = SETTINGS_MARTS_DIR / DEFAULT_BACKTEST_DATASET_FILEN
 DEFAULT_HISTORY_PATH = SETTINGS_STAGING_DIR / "weather_daily.parquet"
 DEFAULT_SCORED_FILENAME = "backtest_scored_climatology.parquet"
 DEFAULT_MODEL_NAME = "baseline_climatology_v1"
+REFERENCE_LEAP_YEAR = 2000
+DAYS_PER_REFERENCE_YEAR = 366
 
 REQUIRED_BACKTEST_COLUMNS = {
     "city_key",
@@ -303,9 +305,9 @@ def _load_frame(path: Path, required_columns: set[str]) -> pd.DataFrame:
 
 
 def _month_day_to_day_of_year(month_day: str) -> int:
-    return pd.Timestamp(f"2001-{month_day}").dayofyear
+    return pd.Timestamp(f"{REFERENCE_LEAP_YEAR}-{month_day}").dayofyear
 
 
 def _day_of_year_distance(day_a: int, day_b: int) -> int:
     raw_distance = abs(day_a - day_b)
-    return min(raw_distance, 365 - raw_distance)
+    return min(raw_distance, DAYS_PER_REFERENCE_YEAR - raw_distance)

@@ -356,6 +356,65 @@ def test_research_runner_default_min_lookback_samples_is_meaningful(
     assert captured["min_lookback_samples"] == 30
 
 
+def test_research_runner_passes_walkforward_profile(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    scored_df = _scored_frame()
+    captured: dict[str, str] = {}
+
+    monkeypatch.setattr(
+        "kwb.research.run_climatology_baseline.build_backtest_dataset",
+        lambda **kwargs: (tmp_path / "backtest_dataset.parquet", {"rows_written": 3}),
+    )
+    monkeypatch.setattr(
+        "kwb.research.run_climatology_baseline.score_climatology_baseline",
+        lambda **kwargs: (tmp_path / "backtest_scored_climatology.parquet", {"rows_scored": 3}),
+    )
+    monkeypatch.setattr(
+        "kwb.research.run_climatology_baseline.evaluate_climatology_strategy",
+        lambda **kwargs: (
+            tmp_path / "backtest_trades_climatology.parquet",
+            tmp_path / "backtest_summary_climatology.json",
+            {"pricing_mode": "decision_price", "trades_taken": 0, "hit_rate": 0.0, "average_edge_at_entry": 0.0, "total_net_pnl": 0.0},
+        ),
+    )
+    monkeypatch.setattr(
+        "kwb.research.run_climatology_baseline.evaluate_climatology_executable_strategy",
+        lambda **kwargs: (
+            tmp_path / "backtest_trades_climatology_executable.parquet",
+            tmp_path / "backtest_summary_climatology_executable.json",
+            {"pricing_mode": "candle_proxy", "trades_taken": 0, "hit_rate": 0.0, "average_edge_at_entry": 0.0, "total_net_pnl": 0.0, "yes_quote_coverage": 0.0},
+        ),
+    )
+    monkeypatch.setattr(
+        "kwb.research.run_climatology_baseline.compare_climatology_pricing_modes",
+        lambda **kwargs: (
+            tmp_path / "backtest_comparison_climatology_pricing.json",
+            tmp_path / "backtest_comparison_climatology_pricing.csv",
+            {"modes": [{}, {}]},
+        ),
+    )
+
+    def fake_walkforward(**kwargs):
+        captured["window_profile"] = kwargs["window_profile"]
+        raise cli_module.WalkforwardClimatologyError("No valid walk-forward folds could be created.")
+
+    monkeypatch.setattr("kwb.research.run_climatology_baseline.run_walkforward_climatology", fake_walkforward)
+    monkeypatch.setattr(pd, "read_parquet", lambda path: scored_df.copy())
+    (tmp_path / "backtest_dataset.parquet").write_text("placeholder", encoding="utf-8")
+    (tmp_path / "backtest_scored_climatology.parquet").write_text("placeholder", encoding="utf-8")
+
+    run_climatology_baseline_research(
+        output_dir=tmp_path,
+        overwrite=True,
+        pricing_mode="both",
+        walkforward_profile="research_short",
+    )
+
+    assert captured["window_profile"] == "research_short"
+
+
 def test_research_runner_cli_smoke(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     def fake_run(**kwargs):
         return (

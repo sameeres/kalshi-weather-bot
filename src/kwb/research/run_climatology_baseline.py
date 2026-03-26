@@ -73,6 +73,7 @@ def run_climatology_baseline_research(
     contracts: int = 1,
     fee_per_contract: float = 0.0,
     max_spread: float | None = None,
+    walkforward_profile: str = "custom",
     train_window: int = 60,
     validation_window: int = 30,
     test_window: int = 30,
@@ -131,6 +132,7 @@ def run_climatology_baseline_research(
         "parquet_engine_limitations_affected_execution": False,
         "walkforward_config": {
             "pricing_mode": pricing_mode,
+            "window_profile": walkforward_profile,
             "train_window": train_window,
             "validation_window": validation_window,
             "test_window": test_window,
@@ -304,6 +306,7 @@ def run_climatology_baseline_research(
                     scored_dataset_path=scored_path,
                     output_dir=run_dir,
                     pricing_mode=pricing_mode,
+                    window_profile=walkforward_profile,
                     train_window=train_window,
                     validation_window=validation_window,
                     test_window=test_window,

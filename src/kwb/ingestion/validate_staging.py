@@ -10,6 +10,12 @@ import pandas as pd
 
 from kwb.ingestion.kalshi_events import DEFAULT_CITIES_CONFIG_PATH, load_enabled_cities
 from kwb.ingestion.kalshi_market_history import summarize_kalshi_history_manifest
+from kwb.ingestion.kalshi_microstructure import (
+    DEFAULT_MICROSTRUCTURE_SNAPSHOTS_FILENAME,
+    DEFAULT_ORDERBOOK_LEVELS_FILENAME,
+    REQUIRED_MICROSTRUCTURE_SNAPSHOT_COLUMNS,
+    REQUIRED_ORDERBOOK_LEVEL_COLUMNS,
+)
 from kwb.mapping.station_candidates import resolve_enabled_city_station_candidates
 from kwb.mapping.station_mapping import collect_station_mapping_issues
 from kwb.marts.backtest_dataset import (
@@ -94,6 +100,42 @@ DATASET_SPECS: dict[str, dict[str, Any]] = {
         "source_of_truth": (
             "Enabled Kalshi series tickers from configs/cities.yml, then Kalshi candlestick history for each "
             "discovered market ticker."
+        ),
+    },
+    "kalshi_market_microstructure_snapshots": {
+        "filename": DEFAULT_MICROSTRUCTURE_SNAPSHOTS_FILENAME,
+        "required_columns": REQUIRED_MICROSTRUCTURE_SNAPSHOT_COLUMNS,
+        "date_column": "snapshot_ts",
+        "date_kind": "timestamp",
+        "unique_keys": ["snapshot_ts", "market_ticker"],
+        "city_column": "city_key",
+        "upstream_dependency": "Kalshi live/public markets endpoint plus optional orderbook endpoint",
+        "builder_name": "kwb.ingestion.kalshi_microstructure.capture_kalshi_microstructure_for_enabled_cities",
+        "local_raw_supported": False,
+        "requires_date_range": False,
+        "require_enabled_city_coverage": False,
+        "allow_empty": True,
+        "source_of_truth": (
+            "Forward-captured Kalshi market microstructure snapshots for enabled weather series, using current "
+            "top-of-book fields from the markets endpoint and orderbook depth when available."
+        ),
+    },
+    "kalshi_orderbook_levels": {
+        "filename": DEFAULT_ORDERBOOK_LEVELS_FILENAME,
+        "required_columns": REQUIRED_ORDERBOOK_LEVEL_COLUMNS,
+        "date_column": "snapshot_ts",
+        "date_kind": "timestamp",
+        "unique_keys": ["snapshot_ts", "market_ticker", "side", "level_rank"],
+        "city_column": "city_key",
+        "upstream_dependency": "Kalshi market orderbook endpoint",
+        "builder_name": "kwb.ingestion.kalshi_microstructure.capture_kalshi_microstructure_for_enabled_cities",
+        "local_raw_supported": False,
+        "requires_date_range": False,
+        "require_enabled_city_coverage": False,
+        "allow_empty": True,
+        "source_of_truth": (
+            "Forward-captured Kalshi orderbook depth for enabled weather series. One row per side/level at each "
+            "snapshot timestamp."
         ),
     },
 }
@@ -383,6 +425,9 @@ def _validate_single_dataset(
     summary["row_count"] = int(len(frame))
     summary["columns"] = sorted(str(column) for column in frame.columns)
     if frame.empty:
+        if spec.get("allow_empty", False):
+            summary["warnings"].append(f"Dataset {dataset_name} is empty.")
+            return summary, frame
         summary["errors"].append(f"Dataset {dataset_name} is empty.")
         return summary, frame
 
@@ -401,11 +446,12 @@ def _validate_single_dataset(
         )
 
     summary["city_keys_present"] = _sorted_unique_strings(frame[spec["city_column"]])
-    missing_cities = sorted(set(enabled_city_keys) - set(summary["city_keys_present"]))
-    if missing_cities:
-        summary["errors"].append(
-            f"Dataset {dataset_name} is missing enabled city coverage for: {', '.join(missing_cities)}."
-        )
+    if spec.get("require_enabled_city_coverage", True):
+        missing_cities = sorted(set(enabled_city_keys) - set(summary["city_keys_present"]))
+        if missing_cities:
+            summary["errors"].append(
+                f"Dataset {dataset_name} is missing enabled city coverage for: {', '.join(missing_cities)}."
+            )
 
     date_coverage, date_errors = _compute_date_coverage(frame, spec["date_column"], spec["date_kind"])
     summary["date_coverage"] = date_coverage
@@ -414,6 +460,9 @@ def _validate_single_dataset(
     if dataset_name == "kalshi_candles":
         candle_errors = _validate_candle_integrity(frame)
         summary["errors"].extend(candle_errors)
+    if dataset_name == "kalshi_orderbook_levels":
+        level_errors = _validate_orderbook_level_integrity(frame)
+        summary["errors"].extend(level_errors)
 
     return summary, frame
 
@@ -514,7 +563,73 @@ def _run_cross_dataset_checks(
                     }
                 )
 
+    if "kalshi_market_microstructure_snapshots" in datasets and "kalshi_orderbook_levels" in datasets:
+        snapshots_df = frames.get("kalshi_market_microstructure_snapshots")
+        levels_df = frames.get("kalshi_orderbook_levels")
+        if snapshots_df is None or levels_df is None:
+            checks.append(
+                {
+                    "status": "error",
+                    "datasets": ["kalshi_market_microstructure_snapshots", "kalshi_orderbook_levels"],
+                    "message": "Cannot validate snapshot/level alignment because one or both datasets are unavailable.",
+                }
+            )
+        elif levels_df.empty:
+            checks.append(
+                {
+                    "status": "ok",
+                    "datasets": ["kalshi_market_microstructure_snapshots", "kalshi_orderbook_levels"],
+                    "message": "No orderbook level rows are staged yet; snapshot dataset exists without depth rows.",
+                }
+            )
+        else:
+            snapshot_keys = set(
+                zip(
+                    snapshots_df["snapshot_ts"].astype(str),
+                    snapshots_df["market_ticker"].astype(str),
+                    strict=False,
+                )
+            )
+            level_keys = set(
+                zip(
+                    levels_df["snapshot_ts"].astype(str),
+                    levels_df["market_ticker"].astype(str),
+                    strict=False,
+                )
+            )
+            orphan_levels = sorted(level_keys - snapshot_keys)
+            if orphan_levels:
+                checks.append(
+                    {
+                        "status": "error",
+                        "datasets": ["kalshi_market_microstructure_snapshots", "kalshi_orderbook_levels"],
+                        "message": (
+                            "Orderbook levels contain snapshot_ts/market_ticker pairs absent from the snapshot dataset."
+                        ),
+                    }
+                )
+            else:
+                checks.append(
+                    {
+                        "status": "ok",
+                        "datasets": ["kalshi_market_microstructure_snapshots", "kalshi_orderbook_levels"],
+                        "message": "Every staged orderbook level row maps to a staged microstructure snapshot row.",
+                    }
+                )
+
     return checks
+
+
+def _validate_orderbook_level_integrity(frame: pd.DataFrame) -> list[str]:
+    errors: list[str] = []
+    for (_, _, side), side_df in frame.groupby(["snapshot_ts", "market_ticker", "side"], sort=False):
+        if not side_df["level_rank"].is_monotonic_increasing:
+            errors.append("Dataset kalshi_orderbook_levels has non-monotonic level_rank ordering within a side.")
+            break
+        if not side_df["price_cents"].is_monotonic_decreasing:
+            errors.append("Dataset kalshi_orderbook_levels has bid levels that are not sorted from best to worse price.")
+            break
+    return errors
 
 
 def _build_validation_recommendation(summary: dict[str, Any]) -> str:
@@ -529,11 +644,6 @@ def _build_validation_recommendation(summary: dict[str, Any]) -> str:
 
     if summary["ready"]:
         return "Baseline inputs look ready. Run: kwb research run-climatology-baseline"
-
-    if not summary.get("upstream_environment", {}).get("ncei_api_token_configured", True):
-        weather_missing = {"weather_daily", "weather_normals_daily"} & set(summary["missing_datasets"])
-        if weather_missing:
-            return "Set NCEI_API_TOKEN, then rerun: kwb data build-staging --start-date YYYY-MM-DD --end-date YYYY-MM-DD"
 
     build_errors = summary.get("errors", [])
     if build_errors:

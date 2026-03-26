@@ -6,6 +6,7 @@ from typing import Any
 
 import pandas as pd
 
+from kwb.backtest.fees import VALID_FEE_MODELS, modeled_trade_fee
 from kwb.backtest.fills import conservative_fill
 from kwb.backtest.pnl import contract_pnl
 from kwb.features.market_microstructure import spread
@@ -57,6 +58,7 @@ def evaluate_climatology_executable_strategy(
     min_price: float = 0.0,
     max_price: float = 100.0,
     contracts: int = 1,
+    fee_model: str = "flat_per_contract",
     fee_per_contract: float = 0.0,
     allow_no: bool = False,
     max_spread: float | None = None,
@@ -74,6 +76,7 @@ def evaluate_climatology_executable_strategy(
         min_price=min_price,
         max_price=max_price,
         contracts=contracts,
+        fee_model=fee_model,
         fee_per_contract=fee_per_contract,
         max_spread=max_spread,
     )
@@ -87,6 +90,7 @@ def evaluate_climatology_executable_strategy(
         min_price=min_price,
         max_price=max_price,
         contracts=contracts,
+        fee_model=fee_model,
         fee_per_contract=fee_per_contract,
         allow_no=allow_no,
         max_spread=max_spread,
@@ -110,6 +114,7 @@ def _evaluate_frame(
     min_price: float,
     max_price: float,
     contracts: int,
+    fee_model: str,
     fee_per_contract: float,
     allow_no: bool,
     max_spread: float | None,
@@ -140,6 +145,9 @@ def _evaluate_frame(
             min_samples=min_samples,
             min_price=min_price,
             max_price=max_price,
+            contracts=contracts,
+            fee_model=fee_model,
+            fee_per_contract=fee_per_contract,
             allow_no=allow_no,
             max_spread=max_spread,
         )
@@ -151,6 +159,7 @@ def _evaluate_frame(
             entry_price=float(selection["entry_price"]),
             resolved_yes=bool(row["resolved_yes"]),
             contracts=contracts,
+            fee_model=fee_model,
             fee_per_contract=fee_per_contract,
         )
         if selection["chosen_side"] == "yes":
@@ -184,7 +193,9 @@ def _evaluate_frame(
                 "exec_edge_yes": _optional_float(selection["exec_edge_yes"]),
                 "exec_edge_no": _optional_float(selection["exec_edge_no"]),
                 "edge_at_entry": float(selection["edge_at_entry"]),
+                "gross_edge_at_entry": float(selection["gross_edge_at_entry"]),
                 "contracts": contracts,
+                "fees": float(selection["fees"]),
                 "gross_pnl": gross_pnl,
                 "net_pnl": net_pnl,
                 "lookback_sample_size": int(row["lookback_sample_size"]),
@@ -211,6 +222,7 @@ def _evaluate_frame(
         min_price=min_price,
         max_price=max_price,
         contracts=contracts,
+        fee_model=fee_model,
         fee_per_contract=fee_per_contract,
         max_spread=max_spread,
     )
@@ -223,6 +235,9 @@ def select_executable_trade(
     min_samples: int,
     min_price: float,
     max_price: float,
+    contracts: int,
+    fee_model: str,
+    fee_per_contract: float,
     allow_no: bool,
     max_spread: float | None,
 ) -> dict[str, float | str | None] | None:
@@ -240,7 +255,15 @@ def select_executable_trade(
         side="yes",
     )
     if yes_entry is not None:
-        exec_edge_yes = round(float(row["fair_yes"]) - (yes_entry / 100.0), 6)
+        yes_fee = modeled_trade_fee(
+            fill_price=yes_entry / 100.0,
+            contracts=contracts,
+            fee_model=fee_model,
+            fee_per_contract=fee_per_contract,
+        )
+        yes_fee_per_contract = yes_fee / contracts
+        gross_exec_edge_yes = round(float(row["fair_yes"]) - (yes_entry / 100.0), 6)
+        exec_edge_yes = round(gross_exec_edge_yes - yes_fee_per_contract, 6)
         if _passes_execution_filters(
             entry_price=yes_entry,
             exec_edge=exec_edge_yes,
@@ -256,9 +279,11 @@ def select_executable_trade(
                     "entry_price": yes_entry,
                     "entry_price_source": "yes_ask",
                     "quote_spread": yes_spread,
+                    "fees": yes_fee,
                     "exec_edge_yes": exec_edge_yes,
                     "exec_edge_no": None,
                     "edge_at_entry": exec_edge_yes,
+                    "gross_edge_at_entry": gross_exec_edge_yes,
                 }
             )
 
@@ -269,7 +294,15 @@ def select_executable_trade(
             side="no",
         )
         if no_entry is not None:
-            exec_edge_no = round(float(row["fair_no"]) - (no_entry / 100.0), 6)
+            no_fee = modeled_trade_fee(
+                fill_price=no_entry / 100.0,
+                contracts=contracts,
+                fee_model=fee_model,
+                fee_per_contract=fee_per_contract,
+            )
+            no_fee_per_contract = no_fee / contracts
+            gross_exec_edge_no = round(float(row["fair_no"]) - (no_entry / 100.0), 6)
+            exec_edge_no = round(gross_exec_edge_no - no_fee_per_contract, 6)
             if _passes_execution_filters(
                 entry_price=no_entry,
                 exec_edge=exec_edge_no,
@@ -285,9 +318,11 @@ def select_executable_trade(
                         "entry_price": no_entry,
                         "entry_price_source": "no_ask",
                         "quote_spread": no_spread,
+                        "fees": no_fee,
                         "exec_edge_yes": None,
                         "exec_edge_no": exec_edge_no,
                         "edge_at_entry": exec_edge_no,
+                        "gross_edge_at_entry": gross_exec_edge_no,
                     }
                 )
 
@@ -305,6 +340,7 @@ def _compute_trade_pnl(
     entry_price: float,
     resolved_yes: bool,
     contracts: int,
+    fee_model: str,
     fee_per_contract: float,
 ) -> tuple[float, float]:
     fill_price = entry_price / 100.0
@@ -316,12 +352,13 @@ def _compute_trade_pnl(
         raise ClimatologyExecutableEvaluationError(f"Unsupported chosen_side {chosen_side!r}")
 
     gross_pnl = contract_pnl(fill_price=fill_price, resolved_value=resolved_value, contracts=contracts, fee_per_contract=0.0)
-    net_pnl = contract_pnl(
+    total_fee = modeled_trade_fee(
         fill_price=fill_price,
-        resolved_value=resolved_value,
         contracts=contracts,
+        fee_model=fee_model,
         fee_per_contract=fee_per_contract,
     )
+    net_pnl = round(gross_pnl - total_fee, 6)
     return round(gross_pnl, 6), round(net_pnl, 6)
 
 
@@ -351,7 +388,9 @@ def _build_trades_frame(rows: list[dict[str, Any]]) -> pd.DataFrame:
         "exec_edge_yes",
         "exec_edge_no",
         "edge_at_entry",
+        "gross_edge_at_entry",
         "contracts",
+        "fees",
         "gross_pnl",
         "net_pnl",
         "lookback_sample_size",
@@ -381,6 +420,7 @@ def _summarize_trades(
     min_price: float,
     max_price: float,
     contracts: int,
+    fee_model: str,
     fee_per_contract: float,
     max_spread: float | None,
 ) -> dict[str, int | float | bool]:
@@ -402,6 +442,13 @@ def _summarize_trades(
         average_net_pnl_per_trade = round(float(trades_df["net_pnl"].mean()), 6)
         total_gross_pnl = round(float(trades_df["gross_pnl"].sum()), 6)
         total_net_pnl = round(float(trades_df["net_pnl"].sum()), 6)
+    total_fees = round(float(trades_df["fees"].sum()), 6) if not trades_df.empty and "fees" in trades_df else 0.0
+    average_fee_per_trade = round(float(trades_df["fees"].mean()), 6) if not trades_df.empty and "fees" in trades_df else 0.0
+    average_gross_edge_at_entry = (
+        round(float(trades_df["gross_edge_at_entry"].mean()), 6)
+        if not trades_df.empty and "gross_edge_at_entry" in trades_df
+        else 0.0
+    )
 
     side_counts = _count_by_column(trades_df, "chosen_side")
     price_bucket_counts = _bucket_counts(
@@ -434,10 +481,13 @@ def _summarize_trades(
         "no_trades_taken": no_trades_taken or side_counts.get("no", 0),
         "hit_rate": hit_rate,
         "average_edge_at_entry": average_edge_at_entry,
+        "average_gross_edge_at_entry": average_gross_edge_at_entry,
         "average_gross_pnl_per_trade": average_gross_pnl_per_trade,
         "average_net_pnl_per_trade": average_net_pnl_per_trade,
+        "average_fee_per_trade": average_fee_per_trade,
         "total_gross_pnl": total_gross_pnl,
         "total_net_pnl": total_net_pnl,
+        "total_fees": total_fees,
         "brier_score": float(scored_summary["brier_score"]),
         "average_lookback_sample_size": float(scored_summary["average_lookback_sample_size"]),
         "average_yes_spread": yes_spread_mean,
@@ -450,6 +500,7 @@ def _summarize_trades(
         "min_price": min_price,
         "max_price": max_price,
         "contracts": contracts,
+        "fee_model": fee_model,
         "fee_per_contract": fee_per_contract,
         "max_spread": max_spread,
     }
@@ -525,6 +576,7 @@ def _validate_parameters(
     min_price: float,
     max_price: float,
     contracts: int,
+    fee_model: str,
     fee_per_contract: float,
     max_spread: float | None,
 ) -> None:
@@ -534,6 +586,10 @@ def _validate_parameters(
         raise ClimatologyExecutableEvaluationError(f"min_samples must be at least 1, got {min_samples}")
     if contracts < 1:
         raise ClimatologyExecutableEvaluationError(f"contracts must be at least 1, got {contracts}")
+    if fee_model not in VALID_FEE_MODELS:
+        raise ClimatologyExecutableEvaluationError(
+            f"Unsupported fee_model {fee_model!r}. Expected one of {sorted(VALID_FEE_MODELS)}."
+        )
     if fee_per_contract < 0:
         raise ClimatologyExecutableEvaluationError(f"fee_per_contract must be non-negative, got {fee_per_contract}")
     if min_price < 0 or max_price > 100 or min_price > max_price:

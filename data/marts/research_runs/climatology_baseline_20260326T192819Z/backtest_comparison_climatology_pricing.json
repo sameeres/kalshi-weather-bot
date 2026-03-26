@@ -1,0 +1,110 @@
+{
+  "delta_executable_minus_decision_price": {
+    "average_edge_at_entry_delta": 0.001526,
+    "brier_score_delta": 0.0,
+    "hit_rate_delta": 0.000433,
+    "no_trades_taken_delta": 0.0,
+    "rows_available_delta": 0.0,
+    "rows_scored_delta": 0.0,
+    "total_gross_pnl_delta": -1.425,
+    "total_net_pnl_delta": -1.425,
+    "trades_taken_delta": -8.0,
+    "yes_trades_taken_delta": -8.0
+  },
+  "modes": [
+    {
+      "allow_no": false,
+      "average_edge_at_entry": 0.32579,
+      "average_lookback_sample_size": 31.989,
+      "average_pnl_per_trade": -0.001901,
+      "brier_score": 0.170421,
+      "contracts": 1,
+      "entry_price_bucket_counts": {
+        "0-25": 431,
+        "25-50": 1,
+        "50-75": 2,
+        "75-100": 0
+      },
+      "fee_per_contract": 0.0,
+      "hit_rate": 0.023041,
+      "max_price": 100.0,
+      "min_edge": 0.0,
+      "min_price": 0.0,
+      "min_samples": 1,
+      "no_trades_taken": 0,
+      "pricing_mode": "decision_price",
+      "quote_source": "decision_price_close",
+      "rows_available": 1092,
+      "rows_scored": 1092,
+      "total_gross_pnl": -0.825,
+      "total_net_pnl": -0.825,
+      "trades_taken": 434,
+      "uses_true_quotes": false,
+      "yes_trades_taken": 434
+    },
+    {
+      "allow_no": false,
+      "average_edge_at_entry": 0.327316,
+      "average_fee_per_trade": 0.0,
+      "average_gross_edge_at_entry": 0.327316,
+      "average_gross_pnl_per_trade": -0.005282,
+      "average_lookback_sample_size": 31.989,
+      "average_net_pnl_per_trade": -0.005282,
+      "average_no_spread": 2.184066,
+      "average_yes_spread": 2.184066,
+      "both_sides_quote_coverage": 1.0,
+      "brier_score": 0.170421,
+      "contracts": 1,
+      "entry_price_bucket_counts": {
+        "0-25": 423,
+        "25-50": 1,
+        "50-75": 2,
+        "75-100": 0
+      },
+      "fee_model": "flat_per_contract",
+      "fee_per_contract": 0.0,
+      "hit_rate": 0.023474,
+      "max_price": 100.0,
+      "max_spread": null,
+      "min_edge": 0.0,
+      "min_price": 0.0,
+      "min_samples": 1,
+      "no_quote_coverage": 1.0,
+      "no_trades_taken": 0,
+      "pricing_mode": "candle_proxy",
+      "quote_source": "decision_candle_ohlc_bounds",
+      "rows_available": 1092,
+      "rows_missing_executable_no_quote": 0,
+      "rows_missing_executable_yes_quote": 0,
+      "rows_scored": 1092,
+      "rows_with_both_sides_executable_quotes": 1092,
+      "rows_with_executable_no_quote": 1092,
+      "rows_with_executable_yes_quote": 1092,
+      "spread_bucket_counts": {
+        "0-2": 388,
+        "10+": 0,
+        "2-5": 31,
+        "5-10": 7
+      },
+      "total_fees": 0.0,
+      "total_gross_pnl": -2.25,
+      "total_net_pnl": -2.25,
+      "trades_taken": 426,
+      "uses_true_quotes": false,
+      "yes_quote_coverage": 1.0,
+      "yes_trades_taken": 426
+    }
+  ],
+  "quote_audit": {
+    "best_local_quote_source": "candlestick_ohlcv",
+    "has_candle_history": true,
+    "has_orderbook_history": false,
+    "has_trade_history": false,
+    "has_true_historical_best_bid_ask": false,
+    "local_quote_limitations": [
+      "No historical best-bid/best-ask snapshots are staged locally.",
+      "No order-book depth history is staged locally.",
+      "Executable backtests must use candle-derived quote proxies unless richer local data is added."
+    ]
+  }
+}

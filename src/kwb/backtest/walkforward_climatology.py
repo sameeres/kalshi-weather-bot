@@ -26,9 +26,26 @@ DEFAULT_MIN_PRICE_GRID = (0.0,)
 DEFAULT_MAX_PRICE_GRID = (100.0,)
 DEFAULT_MAX_SPREAD_GRID = (None, 5.0)
 DEFAULT_ALLOW_NO_GRID = (False,)
+DEFAULT_WALKFORWARD_WINDOW_PROFILE = "custom"
+
+WINDOW_PROFILE_CONFIGS: dict[str, dict[str, int]] = {
+    "standard": {
+        "train_window": 60,
+        "validation_window": 30,
+        "test_window": 30,
+        "step_window": 30,
+    },
+    "research_short": {
+        "train_window": 30,
+        "validation_window": 15,
+        "test_window": 15,
+        "step_window": 15,
+    },
+}
 
 VALID_PRICING_MODES = {"decision_price", "candle_proxy", "both"}
 VALID_SELECTION_METRICS = {"total_net_pnl", "average_net_pnl_per_trade"}
+VALID_WINDOW_PROFILES = {"custom", "standard", "research_short", "auto"}
 
 
 class WalkforwardClimatologyError(ValueError):
@@ -49,6 +66,7 @@ def run_walkforward_climatology(
     scored_dataset_path: Path | None = None,
     output_dir: Path | None = None,
     pricing_mode: str = "both",
+    window_profile: str = DEFAULT_WALKFORWARD_WINDOW_PROFILE,
     train_window: int = 60,
     validation_window: int = 30,
     test_window: int = 30,
@@ -58,6 +76,8 @@ def run_walkforward_climatology(
     min_samples_grid: tuple[int, ...] = DEFAULT_MIN_SAMPLES_GRID,
     min_price_grid: tuple[float, ...] = DEFAULT_MIN_PRICE_GRID,
     max_price_grid: tuple[float, ...] = DEFAULT_MAX_PRICE_GRID,
+    executable_fee_model: str = "flat_per_contract",
+    executable_fee_per_contract: float = 0.0,
     max_spread_grid: tuple[float | None, ...] = DEFAULT_MAX_SPREAD_GRID,
     allow_no_grid: tuple[bool, ...] = DEFAULT_ALLOW_NO_GRID,
     expanding: bool = True,
@@ -70,6 +90,7 @@ def run_walkforward_climatology(
 
     _validate_walkforward_parameters(
         pricing_mode=pricing_mode,
+        window_profile=window_profile,
         train_window=train_window,
         validation_window=validation_window,
         test_window=test_window,
@@ -82,13 +103,29 @@ def run_walkforward_climatology(
     scored_df = pd.read_parquet(scored_dataset_path).copy()
     _prepare_scored_frame(scored_df)
 
+    (
+        resolved_profile,
+        train_window,
+        validation_window,
+        test_window,
+        resolved_step_window,
+    ) = _resolve_window_configuration(
+        scored_df=scored_df,
+        window_profile=window_profile,
+        train_window=train_window,
+        validation_window=validation_window,
+        test_window=test_window,
+        step_window=step_window or test_window,
+        expanding=expanding,
+    )
+
     modes = ["decision_price", "candle_proxy"] if pricing_mode == "both" else [pricing_mode]
     folds = _build_temporal_folds(
         scored_df=scored_df,
         train_window=train_window,
         validation_window=validation_window,
         test_window=test_window,
-        step_window=step_window or test_window,
+        step_window=resolved_step_window,
         expanding=expanding,
     )
     if not folds:
@@ -116,6 +153,8 @@ def run_walkforward_climatology(
                 fold_number=fold_number,
                 pricing_mode=mode,
                 grid=grid,
+                executable_fee_model=executable_fee_model,
+                executable_fee_per_contract=executable_fee_per_contract,
                 min_trades_for_selection=min_trades_for_selection,
                 selection_metric=selection_metric,
             )
@@ -138,10 +177,11 @@ def run_walkforward_climatology(
         train_window=train_window,
         validation_window=validation_window,
         test_window=test_window,
-        step_window=step_window or test_window,
+        step_window=resolved_step_window,
         expanding=expanding,
         min_trades_for_selection=min_trades_for_selection,
         selection_metric=selection_metric,
+        window_profile=resolved_profile,
     )
 
     results_path = output_dir / DEFAULT_WALKFORWARD_RESULTS_FILENAME
@@ -263,6 +303,8 @@ def _evaluate_fold(
     fold_number: int,
     pricing_mode: str,
     grid: list[ThresholdParams],
+    executable_fee_model: str,
+    executable_fee_per_contract: float,
     min_trades_for_selection: int,
     selection_metric: str,
 ) -> dict[str, Any]:
@@ -273,7 +315,13 @@ def _evaluate_fold(
 
     candidates: list[dict[str, Any]] = []
     for params in grid:
-        validation_trades, validation_summary = _evaluate_mode_frame(validation_df, pricing_mode, params)
+        validation_trades, validation_summary = _evaluate_mode_frame(
+            validation_df,
+            pricing_mode,
+            params,
+            executable_fee_model=executable_fee_model,
+            executable_fee_per_contract=executable_fee_per_contract,
+        )
         if int(validation_summary["trades_taken"]) < min_trades_for_selection:
             continue
         candidates.append(
@@ -301,7 +349,13 @@ def _evaluate_fold(
         }
 
     chosen = max(candidates, key=lambda item: item["selection_tuple"])
-    test_trades, test_summary = _evaluate_mode_frame(test_df, pricing_mode, chosen["params"])
+    test_trades, test_summary = _evaluate_mode_frame(
+        test_df,
+        pricing_mode,
+        chosen["params"],
+        executable_fee_model=executable_fee_model,
+        executable_fee_per_contract=executable_fee_per_contract,
+    )
 
     annotated_test_rows = test_df.copy()
     annotated_test_rows["pricing_mode"] = pricing_mode
@@ -326,6 +380,8 @@ def _evaluate_mode_frame(
     df: pd.DataFrame,
     pricing_mode: str,
     params: ThresholdParams,
+    executable_fee_model: str = "flat_per_contract",
+    executable_fee_per_contract: float = 0.0,
 ) -> tuple[pd.DataFrame, dict[str, Any]]:
     frame = df.copy().reset_index(drop=True)
     if pricing_mode == "decision_price":
@@ -355,7 +411,8 @@ def _evaluate_mode_frame(
             min_price=params.min_price,
             max_price=params.max_price,
             contracts=1,
-            fee_per_contract=0.0,
+            fee_model=executable_fee_model,
+            fee_per_contract=executable_fee_per_contract,
             allow_no=params.allow_no,
             max_spread=params.max_spread,
         )
@@ -439,6 +496,7 @@ def _build_walkforward_summary(
     expanding: bool,
     min_trades_for_selection: int,
     selection_metric: str,
+    window_profile: str,
 ) -> dict[str, Any]:
     mode_summaries: dict[str, Any] = {}
     for mode, mode_results in results_df.groupby("pricing_mode", sort=False):
@@ -476,6 +534,7 @@ def _build_walkforward_summary(
     return {
         "pricing_mode": pricing_mode,
         "window_config": {
+            "window_profile": window_profile,
             "train_window": train_window,
             "validation_window": validation_window,
             "test_window": test_window,
@@ -620,6 +679,7 @@ def _ensure_inputs_exist(paths: list[Path]) -> None:
 
 def _validate_walkforward_parameters(
     pricing_mode: str,
+    window_profile: str,
     train_window: int,
     validation_window: int,
     test_window: int,
@@ -631,6 +691,10 @@ def _validate_walkforward_parameters(
         raise WalkforwardClimatologyError(
             f"Unsupported pricing_mode {pricing_mode!r}. Expected one of {sorted(VALID_PRICING_MODES)}."
         )
+    if window_profile not in VALID_WINDOW_PROFILES:
+        raise WalkforwardClimatologyError(
+            f"Unsupported window_profile {window_profile!r}. Expected one of {sorted(VALID_WINDOW_PROFILES)}."
+        )
     if train_window < 1 or validation_window < 1 or test_window < 1:
         raise WalkforwardClimatologyError("train_window, validation_window, and test_window must each be at least 1.")
     if step_window is not None and step_window < 1:
@@ -641,3 +705,82 @@ def _validate_walkforward_parameters(
         raise WalkforwardClimatologyError(
             f"Unsupported selection_metric {selection_metric!r}. Expected one of {sorted(VALID_SELECTION_METRICS)}."
         )
+
+
+def _resolve_window_configuration(
+    scored_df: pd.DataFrame,
+    window_profile: str,
+    train_window: int,
+    validation_window: int,
+    test_window: int,
+    step_window: int,
+    expanding: bool,
+) -> tuple[str, int, int, int, int]:
+    unique_dates_count = int(scored_df["event_date"].dt.normalize().nunique())
+
+    if window_profile == "custom":
+        return "custom", train_window, validation_window, test_window, step_window
+
+    if window_profile in WINDOW_PROFILE_CONFIGS:
+        profile = WINDOW_PROFILE_CONFIGS[window_profile]
+        return (
+            window_profile,
+            profile["train_window"],
+            profile["validation_window"],
+            profile["test_window"],
+            profile["step_window"],
+        )
+
+    if window_profile == "auto":
+        for candidate in ["standard", "research_short"]:
+            profile = WINDOW_PROFILE_CONFIGS[candidate]
+            possible_folds = _count_possible_folds(
+                unique_dates_count=unique_dates_count,
+                train_window=profile["train_window"],
+                validation_window=profile["validation_window"],
+                test_window=profile["test_window"],
+                step_window=profile["step_window"],
+                expanding=expanding,
+            )
+            if possible_folds >= 2:
+                return (
+                    candidate,
+                    profile["train_window"],
+                    profile["validation_window"],
+                    profile["test_window"],
+                    profile["step_window"],
+                )
+        profile = WINDOW_PROFILE_CONFIGS["research_short"]
+        return (
+            "research_short",
+            profile["train_window"],
+            profile["validation_window"],
+            profile["test_window"],
+            profile["step_window"],
+        )
+
+    raise WalkforwardClimatologyError(
+        f"Unsupported window_profile {window_profile!r}. Expected one of {sorted(VALID_WINDOW_PROFILES)}."
+    )
+
+
+def _count_possible_folds(
+    unique_dates_count: int,
+    train_window: int,
+    validation_window: int,
+    test_window: int,
+    step_window: int,
+    expanding: bool,
+) -> int:
+    cursor = 0
+    folds = 0
+    while True:
+        train_start = 0 if expanding else cursor
+        train_end = (train_window + cursor) if expanding else (train_start + train_window)
+        validation_end = train_end + validation_window
+        test_end = validation_end + test_window
+        if test_end > unique_dates_count:
+            break
+        folds += 1
+        cursor += step_window
+    return folds

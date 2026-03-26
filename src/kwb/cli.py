@@ -8,6 +8,7 @@ from rich.table import Table
 
 from kwb.ingestion.kalshi_events import ingest_enabled_city_events, ingest_events_for_series
 from kwb.ingestion.kalshi_market_history import ingest_kalshi_market_history_for_enabled_cities
+from kwb.ingestion.kalshi_microstructure import capture_kalshi_microstructure_for_enabled_cities
 from kwb.ingestion.climate_normals import ingest_climate_normals_for_enabled_cities
 from kwb.ingestion.build_staging import build_staging_datasets
 from kwb.ingestion.validate_staging import check_climatology_baseline_readiness, validate_staging_datasets
@@ -30,6 +31,15 @@ from kwb.models.baseline_climatology import ClimatologyModelError, score_climato
 from kwb.research.run_climatology_baseline import (
     ClimatologyResearchRunError,
     run_climatology_baseline_research,
+)
+from kwb.research.stress_test_climatology_frictions import (
+    ClimatologyFrictionStressTestError,
+    stress_test_climatology_frictions,
+)
+from kwb.execution.paper_climatology import (
+    DEFAULT_PAPER_CONFIG_PATH,
+    PaperClimatologyMonitorError,
+    run_paper_climatology_monitor,
 )
 from kwb.mapping.station_candidates import (
     apply_station_mapping_recommendations,
@@ -351,6 +361,45 @@ def ingest_kalshi_history(
     )
 
 
+@kalshi_app.command("capture-microstructure")
+def capture_kalshi_microstructure_command(
+    config_path: str = typer.Option("", help="Optional city config path override."),
+    output_dir: str = typer.Option("", help="Optional staging output directory override."),
+    status: str = typer.Option("open", help="Optional market status filter passed to Kalshi market listing."),
+    include_orderbook: bool = typer.Option(
+        True,
+        "--include-orderbook/--skip-orderbook",
+        help="Attempt to capture orderbook depth in addition to market top-of-book fields.",
+    ),
+    orderbook_depth: int = typer.Option(10, help="Requested orderbook depth per market."),
+    iterations: int = typer.Option(1, help="Number of repeated snapshot captures to run."),
+    poll_interval_seconds: float = typer.Option(
+        None,
+        help="Sleep interval between snapshot iterations when iterations > 1.",
+    ),
+) -> None:
+    try:
+        snapshots_path, levels_path, summary_path, summary = capture_kalshi_microstructure_for_enabled_cities(
+            config_path=Path(config_path) if config_path else CONFIG_DIR / "cities.yml",
+            output_dir=Path(output_dir) if output_dir else None,
+            status=status or None,
+            include_orderbook=include_orderbook,
+            orderbook_depth=orderbook_depth,
+            iterations=iterations,
+            poll_interval_seconds=poll_interval_seconds,
+            return_summary=True,
+        )
+    except Exception as exc:
+        console.print(f"[red]Kalshi microstructure capture failed[/red]\n{exc}")
+        raise typer.Exit(code=1) from exc
+
+    console.print(
+        f"Saved Kalshi microstructure: snapshots={snapshots_path} levels={levels_path} summary={summary_path} "
+        f"(snapshots captured: {summary['snapshot_rows_captured']}, "
+        f"orderbook levels captured: {summary['orderbook_levels_captured']})"
+    )
+
+
 @data_app.command("build-staging")
 def build_staging_command(
     dataset: list[str] | None = typer.Option(
@@ -636,6 +685,10 @@ def run_walkforward_climatology_command(
     input: str = typer.Option("", help="Optional scored climatology parquet override."),
     output_dir: str = typer.Option("", help="Optional walk-forward output directory override."),
     pricing_mode: str = typer.Option("both", help="Pricing mode: decision_price, candle_proxy, or both."),
+    window_profile: str = typer.Option(
+        "custom",
+        help="Walk-forward window profile: custom, standard, research_short, or auto.",
+    ),
     train_window: int = typer.Option(60, help="Training window size in ordered unique event dates."),
     validation_window: int = typer.Option(30, help="Validation window size in ordered unique event dates."),
     test_window: int = typer.Option(30, help="Test window size in ordered unique event dates."),
@@ -658,6 +711,7 @@ def run_walkforward_climatology_command(
             scored_dataset_path=Path(input) if input else None,
             output_dir=Path(output_dir) if output_dir else None,
             pricing_mode=pricing_mode,
+            window_profile=window_profile,
             train_window=train_window,
             validation_window=validation_window,
             test_window=test_window,
@@ -704,6 +758,10 @@ def run_climatology_baseline_research_command(
     contracts: int = typer.Option(1, help="Contracts per selected trade."),
     fee_per_contract: float = typer.Option(0.0, help="Flat fee per contract in dollars."),
     max_spread: float = typer.Option(None, help="Optional max executable spread for candle_proxy mode."),
+    walkforward_profile: str = typer.Option(
+        "custom",
+        help="Walk-forward window profile: custom, standard, research_short, or auto.",
+    ),
     train_window: int = typer.Option(60, help="Walk-forward train window in ordered unique event dates."),
     validation_window: int = typer.Option(30, help="Walk-forward validation window in ordered unique event dates."),
     test_window: int = typer.Option(30, help="Walk-forward test window in ordered unique event dates."),
@@ -777,6 +835,7 @@ def run_climatology_baseline_research_command(
             contracts=contracts,
             fee_per_contract=fee_per_contract,
             max_spread=max_spread,
+            walkforward_profile=walkforward_profile,
             train_window=train_window,
             validation_window=validation_window,
             test_window=test_window,
@@ -832,6 +891,101 @@ def check_baseline_readiness_command(
     )
     if not readiness["ready"]:
         raise typer.Exit(code=1)
+
+
+@research_app.command("stress-test-climatology-frictions")
+def stress_test_climatology_frictions_command(
+    run_dir: str = typer.Option(
+        "",
+        help="Existing climatology baseline run directory containing backtest/scored artifacts.",
+    ),
+    output_dir: str = typer.Option("", help="Optional output directory for stress-test artifacts."),
+    walkforward_profile: str = typer.Option(
+        "research_short",
+        help="Walk-forward profile to use for executable friction stress testing.",
+    ),
+    selection_metric: str = typer.Option(
+        "total_net_pnl",
+        help="Walk-forward validation objective: total_net_pnl or average_net_pnl_per_trade.",
+    ),
+    min_trades_for_selection: int = typer.Option(
+        1,
+        help="Minimum validation trades required to select thresholds in each scenario.",
+    ),
+) -> None:
+    if not run_dir:
+        console.print("[red]A run directory is required.[/red]")
+        raise typer.Exit(code=1)
+
+    try:
+        json_path, csv_path, markdown_path, report = stress_test_climatology_frictions(
+            run_dir=Path(run_dir),
+            output_dir=Path(output_dir) if output_dir else None,
+            walkforward_profile=walkforward_profile,
+            selection_metric=selection_metric,
+            min_trades_for_selection=min_trades_for_selection,
+        )
+    except ClimatologyFrictionStressTestError as exc:
+        console.print(f"[red]Climatology friction stress test failed[/red]\n{exc}")
+        raise typer.Exit(code=1) from exc
+
+    console.print(
+        f"Saved climatology friction stress test: json={json_path} csv={csv_path} markdown={markdown_path} "
+        f"(scenario count: {len(report['scenario_reports'])})"
+    )
+
+
+@research_app.command("paper-monitor-climatology")
+def paper_monitor_climatology_command(
+    config_path: str = typer.Option("", help="Optional city config path override."),
+    paper_config_path: str = typer.Option("", help="Optional paper-trading config path override."),
+    history_path: str = typer.Option("", help="Optional settlement-aligned weather history parquet override."),
+    output_root: str = typer.Option("", help="Optional paper-trading output root override."),
+    microstructure_dir: str = typer.Option("", help="Optional live microstructure capture directory override."),
+    iterations: int = typer.Option(0, help="Repeated scan count. Defaults to the paper config."),
+    poll_interval_seconds: float = typer.Option(
+        None,
+        help="Sleep interval between scans when iterations > 1. Defaults to the paper config.",
+    ),
+    status: str = typer.Option("", help="Optional market status filter override."),
+    include_orderbook: bool = typer.Option(
+        True,
+        "--include-orderbook/--skip-orderbook",
+        help="Capture orderbook depth when available for quote context.",
+    ),
+    orderbook_depth: int = typer.Option(0, help="Optional orderbook depth override."),
+    min_net_edge: float = typer.Option(None, help="Optional paper-trade minimum net edge override."),
+    max_spread_cents: float = typer.Option(None, help="Optional maximum YES spread override."),
+    max_entry_price_cents: float = typer.Option(None, help="Optional gate max entry price override."),
+) -> None:
+    try:
+        evaluations_path, trades_path, summary_path, report_path, summary = run_paper_climatology_monitor(
+            config_path=Path(config_path) if config_path else CONFIG_DIR / "cities.yml",
+            paper_config_path=Path(paper_config_path) if paper_config_path else DEFAULT_PAPER_CONFIG_PATH,
+            history_path=Path(history_path) if history_path else None,
+            output_root=Path(output_root) if output_root else None,
+            microstructure_dir=Path(microstructure_dir) if microstructure_dir else None,
+            iterations=iterations or None,
+            poll_interval_seconds=poll_interval_seconds,
+            status=status or None,
+            include_orderbook=include_orderbook,
+            orderbook_depth=orderbook_depth or None,
+            min_net_edge=min_net_edge,
+            max_spread_cents=max_spread_cents,
+            max_entry_price_cents=max_entry_price_cents,
+        )
+    except PaperClimatologyMonitorError as exc:
+        console.print(f"[red]Paper-only climatology monitor failed[/red]\n{exc}")
+        raise typer.Exit(code=1) from exc
+    except Exception as exc:
+        console.print(f"[red]Paper-only climatology monitor failed[/red]\n{exc}")
+        raise typer.Exit(code=1) from exc
+
+    console.print(
+        f"Saved paper-only climatology monitor: evaluations={evaluations_path} trades={trades_path} "
+        f"summary={summary_path} report={report_path} "
+        f"(evaluations: {summary['totals']['evaluations']}, paper trades: {summary['totals']['paper_trades']})"
+    )
 
 
 def _parse_float_grid(raw: str) -> tuple[float, ...]:

@@ -1,0 +1,21 @@
+paper_climatology_monitor:
+  strategy_name: climatology_or_below_yes_cheap_v1
+  paper_only: true
+  gate:
+    contract_type: or_below
+    chosen_side: yes
+    max_entry_price_cents: 25.0
+  decision:
+    day_window: 1
+    min_lookback_samples: 30
+    contracts: 1
+    fee_model: kalshi_standard_taker
+    fee_per_contract: 0.0
+    min_net_edge: 0.05
+    max_spread_cents: 2.0
+  capture:
+    status: open
+    include_orderbook: true
+    orderbook_depth: 10
+    iterations: 1
+    poll_interval_seconds: 60

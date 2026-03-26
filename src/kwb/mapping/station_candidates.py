@@ -39,6 +39,13 @@ KNOWN_STATION_METADATA: dict[str, dict[str, Any]] = {
         "ncei_station_id": "GHCND:USW00094728",
         "metadata_provenance": "curated_station_registry",
     },
+    "KMDW": {
+        "station_name": "Chicago Midway Airport",
+        "station_lat": 41.7868,
+        "station_lon": -87.7522,
+        "ncei_station_id": "GHCND:USW00014819",
+        "metadata_provenance": "curated_station_registry",
+    },
     "KLGA": {
         "station_name": "LaGuardia Airport",
         "station_lat": 40.7769,
@@ -54,6 +61,11 @@ SERIES_SOURCE_HINTS: dict[str, dict[str, Any]] = {
         "settlement_source_name": "National Weather Service",
         "settlement_source_url": "https://forecast.weather.gov/data/obhistory/KLGA.html",
         "source_provenance": "curated_series_source_hint",
+    },
+    "KXHIGHCHI": {
+        "settlement_source_name": "National Weather Service",
+        "settlement_source_url": "https://forecast.weather.gov/data/obhistory/KMDW.html",
+        "source_provenance": "curated_series_source_hint",
     }
 }
 
@@ -65,6 +77,13 @@ EXPLICIT_SETTLEMENT_OVERRIDES: dict[tuple[str, str], dict[str, Any]] = {
         "settlement_source_url": "https://forecast.weather.gov/data/obhistory/KNYC.html",
         "settlement_station_id": "KNYC",
         "selection_reason": "explicit settlement-alignment override for Kalshi Central Park temperature markets",
+        "override_provenance": "explicit_settlement_override",
+    },
+    ("chicago", "KXHIGHCHI"): {
+        "settlement_source_name": "National Weather Service",
+        "settlement_source_url": "https://forecast.weather.gov/data/obhistory/KMDW.html",
+        "settlement_station_id": "KMDW",
+        "selection_reason": "explicit settlement-alignment override for Kalshi Chicago Midway temperature markets",
         "override_provenance": "explicit_settlement_override",
     }
 }

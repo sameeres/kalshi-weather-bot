@@ -1,0 +1,95 @@
+{
+  "best_skips_top": [
+    {
+      "city_key": "chicago",
+      "entry_price_cents": 20.0,
+      "event_date": "2026-03-27",
+      "fair_yes": 1.0,
+      "market_ticker": "KXHIGHCHI-26MAR27-T30",
+      "net_edge_yes": 0.78,
+      "rejection_reasons": "spread_too_wide",
+      "snapshot_ts": "2026-03-26T18:00:00+00:00"
+    }
+  ],
+  "by_city": [
+    {
+      "city_key": "chicago",
+      "evaluations": 2,
+      "gate_passed": 1,
+      "paper_trades": 0
+    },
+    {
+      "city_key": "nyc",
+      "evaluations": 1,
+      "gate_passed": 1,
+      "paper_trades": 1
+    }
+  ],
+  "capture_summary": {
+    "iteration_summaries": [
+      {
+        "snapshot_ts": "2026-03-26T18:00:00+00:00"
+      }
+    ],
+    "orderbook_levels_captured": 1,
+    "snapshot_rows_captured": 3
+  },
+  "config_path": "reports/paper_monitor_demo_20260326/cities.yml",
+  "daily_dir": "reports/paper_monitor_demo_20260326/paper_output/2026-03-26",
+  "decision": {
+    "contracts": 1,
+    "day_window": 1,
+    "fee_model": "kalshi_standard_taker",
+    "fee_per_contract": 0.0,
+    "max_spread_cents": 2.0,
+    "min_lookback_samples": 30,
+    "min_net_edge": 0.05
+  },
+  "gate": {
+    "chosen_side": "yes",
+    "contract_type": "or_below",
+    "max_entry_price_cents": 25.0
+  },
+  "generated_at_utc": "2026-03-26T20:14:19.093052+00:00",
+  "history_path": "reports/paper_monitor_demo_20260326/weather_daily.parquet",
+  "microstructure_paths": {
+    "capture_summary_path": "reports/paper_monitor_demo_20260326/kalshi_microstructure_capture_summary.json",
+    "levels_path": "reports/paper_monitor_demo_20260326/kalshi_orderbook_levels.parquet",
+    "snapshots_path": "reports/paper_monitor_demo_20260326/kalshi_market_microstructure_snapshots.parquet"
+  },
+  "paper_config_path": "reports/paper_monitor_demo_20260326/paper_trading.yml",
+  "paper_only_mode": true,
+  "paper_trades_top": [
+    {
+      "city_key": "nyc",
+      "entry_price_cents": 20.0,
+      "event_date": "2026-03-27",
+      "fair_yes": 1.0,
+      "market_ticker": "KXHIGHNY-26MAR27-T50",
+      "net_edge_yes": 0.78,
+      "snapshot_ts": "2026-03-26T18:00:00+00:00"
+    }
+  ],
+  "rejected_counts": [
+    {
+      "count": 1,
+      "reason": "net_edge_below_threshold"
+    },
+    {
+      "count": 1,
+      "reason": "not_or_below_contract"
+    },
+    {
+      "count": 1,
+      "reason": "spread_too_wide"
+    }
+  ],
+  "strategy_name": "climatology_or_below_yes_cheap_v1",
+  "totals": {
+    "evaluation_rows_written": 3,
+    "evaluations": 3,
+    "gate_passed": 2,
+    "paper_trades": 1,
+    "trade_rows_written": 1
+  }
+}

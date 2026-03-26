@@ -303,6 +303,55 @@ def test_gross_and_net_pnl_use_executable_entry_price(
     assert df.loc[0, "net_pnl"] == 0.52
 
 
+def test_kalshi_standard_taker_fee_filters_tiny_edge_trade(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    scored_path = _write_placeholder(tmp_path)
+    captured: dict[str, pd.DataFrame] = {}
+    frames = {
+        "backtest_scored_climatology.parquet": pd.DataFrame(
+            [
+                {
+                    "city_key": "nyc",
+                    "market_ticker": "MKT-TAKER-FEE",
+                    "event_date": "2026-03-20",
+                    "decision_ts": "2026-03-20T14:00:00+00:00",
+                    "decision_price": 49.0,
+                    "resolved_yes": True,
+                    "model_prob_yes": 0.51,
+                    "model_prob_no": 0.49,
+                    "fair_yes": 0.51,
+                    "fair_no": 0.49,
+                    "edge_yes": 0.02,
+                    "lookback_sample_size": 8,
+                    "model_name": "baseline_climatology_v1",
+                    "yes_bid": 48.0,
+                    "yes_ask": 50.0,
+                    "no_bid": 50.0,
+                    "no_ask": 52.0,
+                }
+            ]
+        )
+    }
+
+    monkeypatch.setattr(pd, "read_parquet", lambda path: frames[Path(path).name].copy())
+    monkeypatch.setattr(pd.DataFrame, "to_parquet", lambda self, path, index=False: captured.setdefault("df", self.copy()))
+    monkeypatch.setattr(Path, "write_text", lambda self, text, encoding="utf-8": None)
+
+    _, _, summary = evaluate_climatology_executable_strategy(
+        scored_dataset_path=scored_path,
+        output_path=tmp_path / "trades.parquet",
+        summary_output_path=tmp_path / "summary.json",
+        min_edge=0.0,
+        fee_model="kalshi_standard_taker",
+    )
+
+    assert summary["trades_taken"] == 0
+    assert summary["total_fees"] == 0.0
+    assert captured["df"].empty
+
+
 def test_output_schema_contains_required_columns(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -347,7 +396,9 @@ def test_output_schema_contains_required_columns(
         "exec_edge_yes",
         "exec_edge_no",
         "edge_at_entry",
+        "gross_edge_at_entry",
         "contracts",
+        "fees",
         "gross_pnl",
         "net_pnl",
         "lookback_sample_size",
@@ -388,6 +439,8 @@ def test_summary_json_is_written(
     assert payload["yes_quote_coverage"] == 1.0
     assert payload["average_yes_spread"] == 2.0
     assert payload["spread_bucket_counts"]["0-2"] == 2
+    assert payload["fee_model"] == "flat_per_contract"
+    assert payload["total_fees"] == 0.0
     assert "brier_score" in payload
 
 

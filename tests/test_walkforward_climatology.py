@@ -100,6 +100,32 @@ def test_both_pricing_modes_produce_fold_results_and_diagnostics(
     )
 
 
+def test_auto_window_profile_uses_research_short_for_small_samples(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    scored_path = _write_scored_pickle(tmp_path, _scored_frame_with_quotes(days=91))
+    monkeypatch.setattr(pd, "read_parquet", lambda path: pd.read_pickle(path))
+
+    _, summary_path, _, summary = run_walkforward_climatology(
+        scored_dataset_path=scored_path,
+        output_dir=tmp_path,
+        pricing_mode="decision_price",
+        window_profile="auto",
+        min_trades_for_selection=0,
+        min_edge_grid=(0.0,),
+        min_samples_grid=(1,),
+        min_price_grid=(0.0,),
+        max_price_grid=(100.0,),
+        allow_no_grid=(False,),
+    )
+
+    payload = json.loads(summary_path.read_text(encoding="utf-8"))
+    assert payload["window_config"]["window_profile"] == "research_short"
+    assert payload["fold_count"] == 3
+    assert summary["results_by_pricing_mode"]["decision_price"]["folds_attempted"] == 3
+
+
 def test_insufficient_data_fails_clearly(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

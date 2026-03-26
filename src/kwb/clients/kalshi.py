@@ -123,6 +123,7 @@ class KalshiClient:
         self,
         series_ticker: str | None = None,
         event_ticker: str | None = None,
+        status: str | None = None,
         limit: int = 200,
         cursor: str | None = None,
     ) -> dict[str, Any]:
@@ -131,9 +132,14 @@ class KalshiClient:
             params["series_ticker"] = series_ticker
         if event_ticker:
             params["event_ticker"] = event_ticker
+        if status:
+            params["status"] = status
         if cursor:
             params["cursor"] = cursor
         return self._get("/markets", params=params)
+
+    def get_market(self, market_ticker: str) -> dict[str, Any]:
+        return self._get(f"/markets/{market_ticker}")
 
     def get_market_candlesticks(
         self,
@@ -154,6 +160,10 @@ class KalshiClient:
             f"/series/{series_ticker}/markets/{market_ticker}/candlesticks",
             params=params,
         )
+
+    def get_market_orderbook(self, market_ticker: str, depth: int = 10) -> dict[str, Any]:
+        params = {"depth": depth}
+        return self._get(f"/markets/{market_ticker}/orderbook", params=params)
 
 
 def to_unix_ts(dt: datetime) -> int:

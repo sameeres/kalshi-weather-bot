@@ -9,6 +9,7 @@ from kwb.mapping.station_candidates import (
     apply_station_mapping_recommendations,
     build_station_mapping_report,
     resolve_enabled_city_station_candidates,
+    resolve_ncei_station_id,
 )
 
 
@@ -141,6 +142,36 @@ def test_station_resolution_uses_series_hint_when_events_are_missing(tmp_path: P
     assert resolution["results"][0]["selected_candidate"]["settlement_station_name"] == "Central Park"
     assert resolution["results"][0]["selected_automatically"] is True
     assert "settlement-alignment override" in resolution["results"][0]["selected_candidate"]["selection_reason"]
+
+
+def test_chicago_station_resolution_uses_midway_override_when_events_are_missing(tmp_path: Path) -> None:
+    config_path = _write_cities_config(
+        tmp_path,
+        [
+            {
+                "city_key": "chicago",
+                "city_name": "Chicago",
+                "timezone": "America/Chicago",
+                "kalshi_series_ticker": "KXHIGHCHI",
+                "settlement_source_name": None,
+                "settlement_source_url": None,
+                "settlement_station_id": None,
+                "settlement_station_name": None,
+                "station_lat": None,
+                "station_lon": None,
+                "enabled": True,
+            }
+        ],
+    )
+
+    resolution = resolve_enabled_city_station_candidates(config_path=config_path)
+
+    selected = resolution["results"][0]["selected_candidate"]
+    assert selected["settlement_station_id"] == "KMDW"
+    assert selected["settlement_station_name"] == "Chicago Midway Airport"
+    assert selected["settlement_source_url"] == "https://forecast.weather.gov/data/obhistory/KMDW.html"
+    assert resolution["results"][0]["selected_automatically"] is True
+    assert resolve_ncei_station_id("KMDW") == "GHCND:USW00014819"
 
 
 def test_station_resolution_override_beats_staged_laguardia_source(

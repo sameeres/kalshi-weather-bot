@@ -1,0 +1,11 @@
+cities:
+  - city_key: nyc
+    city_name: New York
+    timezone: America/New_York
+    kalshi_series_ticker: KXHIGHNY
+    enabled: true
+  - city_key: chicago
+    city_name: Chicago
+    timezone: America/Chicago
+    kalshi_series_ticker: KXHIGHCHI
+    enabled: true

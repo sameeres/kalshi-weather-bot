@@ -1,10 +1,10 @@
 {
-  "checked_at_utc": "2026-03-24T11:29:37.159520+00:00",
+  "checked_at_utc": "2026-03-26T19:28:19.201495+00:00",
   "config_path": "/Users/faisalessa/kalshi-weather-bot/configs/cities.yml",
   "cross_dataset_checks": [
     {
       "datasets": [],
-      "message": "Enabled cities in config: nyc.",
+      "message": "Enabled cities in config: chicago, nyc.",
       "status": "ok"
     },
     {
@@ -20,6 +20,7 @@
     "kalshi_candles": {
       "builder_name": "kwb.ingestion.kalshi_market_history.ingest_kalshi_market_history_for_enabled_cities",
       "city_keys_present": [
+        "chicago",
         "nyc"
       ],
       "columns": [
@@ -46,7 +47,7 @@
       "local_raw_supported": false,
       "path": "/Users/faisalessa/kalshi-weather-bot/data/staging/kalshi_candles.parquet",
       "requires_date_range": true,
-      "row_count": 20544,
+      "row_count": 41493,
       "source_of_truth": "Enabled Kalshi series tickers from configs/cities.yml, then Kalshi candlestick history for each discovered market ticker.",
       "upstream_dependency": "Kalshi public candlestick API",
       "warnings": []
@@ -54,6 +55,7 @@
     "kalshi_markets": {
       "builder_name": "kwb.ingestion.kalshi_market_history.ingest_kalshi_market_history_for_enabled_cities",
       "city_keys_present": [
+        "chicago",
         "nyc"
       ],
       "columns": [
@@ -84,7 +86,7 @@
       "local_raw_supported": false,
       "path": "/Users/faisalessa/kalshi-weather-bot/data/staging/kalshi_markets.parquet",
       "requires_date_range": true,
-      "row_count": 546,
+      "row_count": 1092,
       "source_of_truth": "Enabled Kalshi series tickers from configs/cities.yml, then Kalshi series event and market metadata retrieved through the public API.",
       "upstream_dependency": "Kalshi public events/markets API",
       "warnings": []
@@ -92,6 +94,7 @@
     "weather_daily": {
       "builder_name": "kwb.ingestion.weather_history.ingest_weather_history_for_enabled_cities",
       "city_keys_present": [
+        "chicago",
         "nyc"
       ],
       "columns": [
@@ -101,14 +104,12 @@
         "source_dataset",
         "station_id",
         "tmax_c",
-        "tmax_f",
-        "tmin_c",
-        "tmin_f"
+        "tmax_f"
       ],
       "dataset": "weather_daily",
       "date_coverage": {
         "max": "2026-01-30",
-        "min": "2025-11-01"
+        "min": "2015-01-01"
       },
       "duplicate_rows": 0,
       "errors": [],
@@ -117,7 +118,7 @@
       "local_raw_supported": false,
       "path": "/Users/faisalessa/kalshi-weather-bot/data/staging/weather_daily.parquet",
       "requires_date_range": true,
-      "row_count": 91,
+      "row_count": 8093,
       "source_of_truth": "Enabled-city settlement station mapping from configs/cities.yml, then NOAA NCEI daily station observations for the mapped settlement station.",
       "upstream_dependency": "NOAA NCEI daily observations API (GHCND)",
       "warnings": []
@@ -125,6 +126,7 @@
     "weather_normals_daily": {
       "builder_name": "kwb.ingestion.climate_normals.ingest_climate_normals_for_enabled_cities",
       "city_keys_present": [
+        "chicago",
         "nyc"
       ],
       "columns": [
@@ -151,59 +153,798 @@
       "local_raw_supported": false,
       "path": "/Users/faisalessa/kalshi-weather-bot/data/staging/weather_normals_daily.parquet",
       "requires_date_range": false,
-      "row_count": 365,
+      "row_count": 732,
       "source_of_truth": "Enabled-city settlement station mapping from configs/cities.yml, then NOAA NCEI daily climate normals for the mapped settlement station.",
       "upstream_dependency": "NOAA NCEI daily climate normals API (NORMAL_DLY)",
       "warnings": []
     }
   },
   "enabled_city_keys": [
+    "chicago",
     "nyc"
   ],
   "invalid_datasets": [],
   "kalshi_history_progress": {
     "chunk_dir": "/Users/faisalessa/kalshi-weather-bot/data/staging/kalshi_history_chunks",
-    "completed_candle_chunks": 0,
-    "completed_market_chunks": 0,
+    "completed_candle_chunks": 1092,
+    "completed_market_chunks": 2,
     "failed_candle_chunks": 0,
-    "failed_market_chunks": 1,
-    "last_error": "HTTPSConnectionPool(host='api.elections.kalshi.com', port=443): Max retries exceeded with url: /trade-api/v2/events?limit=200&series_ticker=KXHIGHNY (Caused by NameResolutionError(\"HTTPSConnection(host='api.elections.kalshi.com', port=443): Failed to resolve 'api.elections.kalshi.com' ([Errno 8] nodename nor servname provided, or not known)\"))",
+    "failed_market_chunks": 0,
+    "last_error": null,
     "manifest_path": "/Users/faisalessa/kalshi-weather-bot/data/staging/kalshi_history_manifest.json",
     "pending_candle_chunks": 0,
-    "pending_market_chunks": 1,
-    "resume_recommended": true,
+    "pending_market_chunks": 0,
+    "resume_recommended": false,
     "resume_supported": true,
     "retry_summary": {
       "events": [
         {
           "attempt": 1,
           "path": "/events",
-          "reason": "ConnectionError",
-          "sleep_seconds": 1.0448550219451207
+          "reason": "status=429",
+          "sleep_seconds": 1.0684558528574355
         },
         {
-          "attempt": 2,
-          "path": "/events",
-          "reason": "ConnectionError",
-          "sleep_seconds": 2.4562533046585204
+          "attempt": 1,
+          "path": "/markets",
+          "reason": "status=429",
+          "sleep_seconds": 1.2221903389983482
         },
         {
-          "attempt": 3,
-          "path": "/events",
-          "reason": "ConnectionError",
-          "sleep_seconds": 4.07125014091883
+          "attempt": 1,
+          "path": "/markets",
+          "reason": "status=429",
+          "sleep_seconds": 1.2160108189113816
         },
         {
-          "attempt": 4,
+          "attempt": 1,
+          "path": "/markets",
+          "reason": "status=429",
+          "sleep_seconds": 1.0406089596684347
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-26JAN30-T15/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.0412829480789592
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-26JAN29-B23.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.0518755947493967
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-26JAN28-B19.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.1974241217407053
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-26JAN26-T27/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.2098760378856515
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-26JAN25-B27.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.1228704052579066
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-26JAN24-B16.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.0468494627560625
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-26JAN22-T47/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.0926088893668842
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-26JAN21-B39.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.115716605745079
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-26JAN17-T43/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.013819706628289
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-26JAN16-B35.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.16866103701543
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-26JAN14-B51.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.0449107243338145
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-26JAN13-B47.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.1593254527877501
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-26JAN12-B39.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.04036693869354
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-26JAN10-B58.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.000351043684774
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-26JAN09-B51.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.22439889783095
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-26JAN07-T45/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.0002903912725494
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-26JAN06-B45.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.124856625117899
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-26JAN05-B35.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.117250339771684
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-26JAN03-T36/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.1025191876960572
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-26JAN02-T28/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.0877249584002593
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-26JAN01-B36.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.2023942324019854
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-25DEC31-B35.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.2018677338227368
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-25DEC29-B52.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.1711526488817867
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-25DEC27-T36/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.124293796835786
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-25DEC26-B31.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.18684964266214
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-25DEC24-T47/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.001467035701705
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-25DEC23-B44.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.101190553997566
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-25DEC22-B40.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.1672781705431208
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-25DEC21-B40.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.0240528140117129
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-25DEC18-T50/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.1991283304105895
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-25DEC17-B45.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.0339094172183436
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-25DEC15-B32.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.179033247796156
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-25DEC14-B36.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.2174591121315865
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-25DEC12-T39/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.0205120393052818
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-25DEC11-B42.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.051356487738182
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-25DEC09-B36.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.0492444366048876
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-25DEC06-T39/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.099589288738138
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-25DEC05-B34.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.0553473717110997
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-25DEC04-B37.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.236489826881017
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-25DEC02-B43.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.0958613807005633
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-25NOV30-T53/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.2063346107879065
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-25NOV29-B45.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.0407784116294923
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-25NOV28-B41.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.0273970607833047
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-25NOV26-T65/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.0269068395117178
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-25NOV25-B54.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.1791393041034763
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-25NOV23-B49.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.075138068406425
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-25NOV21-T50/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.1175261211959955
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-25NOV20-B49.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.101929999329568
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-25NOV18-T43/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.166724822605143
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-25NOV16-T52/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.1241644030813374
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-25NOV15-B51.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.0156222002789521
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-25NOV13-T48/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.107369030983924
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-25NOV12-B47.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.0090418873045597
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-25NOV08-B66.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.1042517573893256
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-25NOV07-B55.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.127282667781703
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-25NOV05-B66.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.0691789088162376
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-25NOV04-B58.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.245015566576832
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-25NOV02-B61.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.2136179522795656
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHNY/markets/KXHIGHNY-25NOV01-B53.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.2258331352744365
+        },
+        {
+          "attempt": 1,
           "path": "/events",
-          "reason": "ConnectionError",
-          "sleep_seconds": 8.370859404039086
+          "reason": "status=429",
+          "sleep_seconds": 1.181208712734635
+        },
+        {
+          "attempt": 1,
+          "path": "/markets",
+          "reason": "status=429",
+          "sleep_seconds": 1.0673938369265852
+        },
+        {
+          "attempt": 1,
+          "path": "/markets",
+          "reason": "status=429",
+          "sleep_seconds": 1.033741724480284
+        },
+        {
+          "attempt": 1,
+          "path": "/markets",
+          "reason": "status=429",
+          "sleep_seconds": 1.1369523582763383
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-26JAN29-B16.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.1803250193850319
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-26JAN27-T13/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.1464944125238397
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-26JAN26-B9.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.1593570706778178
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-26JAN25-B16.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.2017332370330134
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-26JAN23-B11.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.0727538982263596
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-26JAN21-B30.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.1861255549762493
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-26JAN19-T16/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.2486795606247396
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-26JAN17-T23/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.0673000898637943
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-26JAN15-T25/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.2142967869524246
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-26JAN14-B42.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.0001103876517994
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-26JAN13-B48.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.014624517470713
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-26JAN11-B38.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.217101981324175
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-26JAN10-B39.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.1749403027203362
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-26JAN08-T60/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.0190041869554418
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-26JAN07-B48.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.1076688852729668
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-26JAN06-B43.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.025951510418061
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-26JAN04-T36/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.1700685372918305
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-26JAN03-B33.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.0930632371448583
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-26JAN02-B26.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.1915735480658134
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25DEC31-T37/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.2223437648254927
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25DEC29-T31/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.0903378148666065
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25DEC28-B63.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.0576446735587062
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25DEC27-B47.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.1387729010480698
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25DEC25-T40/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.2280348723499368
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25DEC23-T45/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.075860485838373
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25DEC22-B44.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.1480190080041588
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25DEC20-T39/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.1030665498342156
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25DEC19-B28.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.1960698518850301
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25DEC18-B48.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.1475223565436763
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25DEC16-T35/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.1845654171738054
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25DEC15-B27.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.025027500447003
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25DEC13-T25/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.1039226628779055
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25DEC12-B32.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.1748240946545208
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25DEC10-T43/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.1486925844315468
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25DEC09-B39.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.1504537413003357
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25DEC07-B31.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.1126327780121594
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25DEC06-B28.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.1940840971360005
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25DEC04-B20.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.0995364789123883
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25DEC02-T30/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.0246955843328904
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25DEC01-B31.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.241574831162895
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25NOV30-B31.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.096797442858986
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25NOV28-T30/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.2452628808870265
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25NOV27-B35.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.1730755133712711
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25NOV25-T58/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.0908802836177152
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25NOV24-B51.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.1513871615126465
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25NOV23-B51.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.0457148848082252
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25NOV21-B55.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.1943510755854296
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25NOV20-B51.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.1781136139468267
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25NOV18-T41/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.096480570709434
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25NOV17-B48.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.0736509883241883
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25NOV15-T71/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.075694806736772
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25NOV14-B60.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.155350135651519
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25NOV12-T47/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.0353048471270798
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25NOV11-B42.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.1217402348321581
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25NOV09-B42.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.1800472423144048
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25NOV07-T68/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.1406432810078078
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25NOV06-B59.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.137988797263027
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25NOV04-B63.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.1254789082279884
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25NOV03-B59.5/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.2447158983482298
+        },
+        {
+          "attempt": 1,
+          "path": "/series/KXHIGHCHI/markets/KXHIGHCHI-25NOV01-T48/candlesticks",
+          "reason": "status=429",
+          "sleep_seconds": 1.2203298015554742
         }
       ],
-      "total_retries": 4
+      "total_retries": 127
     },
-    "status": "failed",
-    "updated_at_utc": "2026-03-24T11:29:37.139494+00:00"
+    "status": "completed",
+    "updated_at_utc": "2026-03-26T19:22:45.804473+00:00"
   },
   "local_raw_files_discovered": [],
   "missing_datasets": [],
@@ -218,12 +959,14 @@
   "staging_dir": "/Users/faisalessa/kalshi-weather-bot/data/staging",
   "station_mapping": {
     "auto_selectable_city_keys": [
-      "nyc"
+      "nyc",
+      "chicago"
     ],
     "issues": [],
     "ready": true,
     "recommended_city_keys": [
-      "nyc"
+      "nyc",
+      "chicago"
     ]
   },
   "upstream_environment": {

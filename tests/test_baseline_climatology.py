@@ -8,6 +8,8 @@ import kwb.cli as cli_module
 from kwb.cli import app
 from kwb.models.baseline_climatology import (
     ClimatologyModelError,
+    _day_of_year_distance,
+    _month_day_to_day_of_year,
     estimate_climatology_prob_yes,
     evaluate_scored_climatology,
     score_climatology_baseline,
@@ -201,6 +203,86 @@ def test_climatology_insufficient_lookback_is_handled_explicitly(
     assert summary["rows_scored"] == 0
     assert summary["unscored_insufficient_history_rows"] == 1
     assert captured["df"].empty
+
+
+def test_month_day_to_day_of_year_accepts_leap_day() -> None:
+    assert _month_day_to_day_of_year("02-29") == 60
+
+
+def test_day_of_year_distance_handles_february_leap_day_neighbors() -> None:
+    feb_28 = _month_day_to_day_of_year("02-28")
+    feb_29 = _month_day_to_day_of_year("02-29")
+    mar_1 = _month_day_to_day_of_year("03-01")
+
+    assert _day_of_year_distance(feb_28, feb_29) == 1
+    assert _day_of_year_distance(feb_29, mar_1) == 1
+    assert _day_of_year_distance(feb_28, mar_1) == 2
+
+
+def test_day_of_year_distance_uses_366_day_wraparound() -> None:
+    dec_31 = _month_day_to_day_of_year("12-31")
+    jan_1 = _month_day_to_day_of_year("01-01")
+
+    assert _day_of_year_distance(dec_31, jan_1) == 1
+
+
+def test_climatology_baseline_scoring_tolerates_leap_day_history(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    backtest_path, history_path = _write_placeholders(tmp_path)
+    captured: dict[str, pd.DataFrame] = {}
+    frames = _base_frames()
+    frames["backtest_dataset.parquet"] = pd.DataFrame(
+        [
+            {
+                "city_key": "nyc",
+                "market_ticker": "KXHIGHNY-26MAR01-B65",
+                "event_date": "2026-03-01",
+                "decision_ts": "2026-03-01T15:00:00+00:00",
+                "decision_price": 44.0,
+                "yes_bid": 41.0,
+                "yes_ask": 45.0,
+                "no_bid": 55.0,
+                "no_ask": 59.0,
+                "actual_tmax_f": 67.0,
+                "normal_tmax_f": 50.0,
+                "tmax_anomaly_f": 17.0,
+                "resolved_yes": True,
+                "floor_strike": 65,
+                "cap_strike": 69,
+                "strike_type": "between",
+                "month_day": "03-01",
+            }
+        ]
+    )
+    frames["weather_daily.parquet"] = pd.DataFrame(
+        [
+            {"city_key": "nyc", "obs_date": "2024-02-28", "tmax_f": 60.0},
+            {"city_key": "nyc", "obs_date": "2024-02-29", "tmax_f": 66.0},
+            {"city_key": "nyc", "obs_date": "2025-03-01", "tmax_f": 68.0},
+        ]
+    )
+
+    monkeypatch.setattr(pd, "read_parquet", lambda path: frames[Path(path).name].copy())
+    monkeypatch.setattr(
+        pd.DataFrame,
+        "to_parquet",
+        lambda self, path, index=False: captured.setdefault("df", self.copy()),
+    )
+
+    _, summary = score_climatology_baseline(
+        backtest_dataset_path=backtest_path,
+        history_path=history_path,
+        output_dir=tmp_path,
+        day_window=1,
+        min_lookback_samples=1,
+    )
+
+    df = captured["df"]
+    assert summary["rows_scored"] == 1
+    assert df.loc[0, "lookback_sample_size"] == 2
+    assert df.loc[0, "model_prob_yes"] == 1.0
 
 
 def test_climatology_evaluation_helper_computes_brier_score() -> None:

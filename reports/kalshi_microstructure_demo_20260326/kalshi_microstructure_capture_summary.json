@@ -1,0 +1,27 @@
+{
+  "captured_at_utc": "2026-03-26T18:17:01.056961+00:00",
+  "config_path": "reports/kalshi_microstructure_demo_20260326/demo_cities.yml",
+  "enabled_city_keys": [
+    "nyc"
+  ],
+  "include_orderbook": true,
+  "iteration_summaries": [
+    {
+      "market_snapshots_captured": 1,
+      "orderbook_failures": [],
+      "orderbook_levels_captured": 4,
+      "snapshot_ts": "2026-03-26T18:17:00.752930+00:00"
+    }
+  ],
+  "iterations": 1,
+  "orderbook_depth": 2,
+  "orderbook_levels_captured": 4,
+  "orderbook_levels_output_path": "reports/kalshi_microstructure_demo_20260326/kalshi_orderbook_levels.parquet",
+  "orderbook_levels_total_rows": 4,
+  "output_dir": "reports/kalshi_microstructure_demo_20260326",
+  "poll_interval_seconds": null,
+  "snapshot_output_path": "reports/kalshi_microstructure_demo_20260326/kalshi_market_microstructure_snapshots.parquet",
+  "snapshot_rows_captured": 1,
+  "snapshots_total_rows": 1,
+  "status_filter": "open"
+}

@@ -230,8 +230,6 @@ def _build_staging_recommendation(build_errors: list[str], validation_recommenda
         return validation_recommendation
 
     first_error = build_errors[0]
-    if "NCEI_API_TOKEN is not set" in first_error:
-        return "Set NCEI_API_TOKEN, then rerun: kwb data build-staging --start-date YYYY-MM-DD --end-date YYYY-MM-DD"
     if "429" in first_error:
         return "Kalshi API rate-limited the build. Resume with: kwb data build-staging --resume --start-date YYYY-MM-DD --end-date YYYY-MM-DD"
     return validation_recommendation

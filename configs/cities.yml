@@ -14,14 +14,14 @@ cities:
   - city_key: chicago
     city_name: Chicago
     timezone: America/Chicago
-    kalshi_series_ticker: null
-    settlement_source_name: null
-    settlement_station_id: null
-    settlement_station_name: null
-    settlement_source_url: null
-    station_lat: null
-    station_lon: null
-    enabled: false
+    kalshi_series_ticker: KXHIGHCHI
+    settlement_source_name: National Weather Service
+    settlement_station_id: KMDW
+    settlement_station_name: Chicago Midway Airport
+    settlement_source_url: https://forecast.weather.gov/data/obhistory/KMDW.html
+    station_lat: 41.7868
+    station_lon: -87.7522
+    enabled: true
 
   - city_key: miami
     city_name: Miami

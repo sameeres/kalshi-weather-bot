@@ -1,0 +1,168 @@
+{
+  "checked_at_utc": "2026-03-26T18:17:10.102345+00:00",
+  "config_path": "reports/kalshi_microstructure_demo_20260326/demo_cities.yml",
+  "cross_dataset_checks": [
+    {
+      "datasets": [],
+      "message": "Enabled cities in config: nyc.",
+      "status": "ok"
+    },
+    {
+      "datasets": [
+        "kalshi_market_microstructure_snapshots",
+        "kalshi_orderbook_levels"
+      ],
+      "message": "Every staged orderbook level row maps to a staged microstructure snapshot row.",
+      "status": "ok"
+    }
+  ],
+  "datasets": {
+    "kalshi_market_microstructure_snapshots": {
+      "builder_name": "kwb.ingestion.kalshi_microstructure.capture_kalshi_microstructure_for_enabled_cities",
+      "city_keys_present": [
+        "nyc"
+      ],
+      "columns": [
+        "best_no_ask_cents",
+        "best_no_ask_size",
+        "best_no_bid_cents",
+        "best_no_bid_size",
+        "best_yes_ask_cents",
+        "best_yes_ask_size",
+        "best_yes_bid_cents",
+        "best_yes_bid_size",
+        "can_close_early",
+        "city_key",
+        "close_time",
+        "event_ticker",
+        "expiration_time",
+        "fractional_trading_enabled",
+        "ingested_at",
+        "last_price_cents",
+        "liquidity_dollars",
+        "market_no_ask_cents",
+        "market_no_ask_size",
+        "market_no_bid_cents",
+        "market_no_bid_size",
+        "market_status",
+        "market_subtitle",
+        "market_ticker",
+        "market_title",
+        "market_yes_ask_cents",
+        "market_yes_ask_size",
+        "market_yes_bid_cents",
+        "market_yes_bid_size",
+        "no_spread_cents",
+        "open_interest_contracts",
+        "orderbook_available",
+        "orderbook_capture_error",
+        "orderbook_depth_requested",
+        "orderbook_no_ask_cents",
+        "orderbook_no_ask_size",
+        "orderbook_no_bid_cents",
+        "orderbook_no_bid_size",
+        "orderbook_yes_ask_cents",
+        "orderbook_yes_ask_size",
+        "orderbook_yes_bid_cents",
+        "orderbook_yes_bid_size",
+        "price_level_structure",
+        "price_ranges_json",
+        "quote_source",
+        "response_price_units",
+        "series_ticker",
+        "snapshot_ts",
+        "tick_size",
+        "volume_contracts",
+        "yes_spread_cents"
+      ],
+      "dataset": "kalshi_market_microstructure_snapshots",
+      "date_coverage": {
+        "max": "2026-03-26T18:17:00+0000",
+        "min": "2026-03-26T18:17:00+0000"
+      },
+      "duplicate_rows": 0,
+      "errors": [],
+      "exists": true,
+      "filename": "kalshi_market_microstructure_snapshots.parquet",
+      "local_raw_supported": false,
+      "path": "reports/kalshi_microstructure_demo_20260326/kalshi_market_microstructure_snapshots.parquet",
+      "requires_date_range": false,
+      "row_count": 1,
+      "source_of_truth": "Forward-captured Kalshi market microstructure snapshots for enabled weather series, using current top-of-book fields from the markets endpoint and orderbook depth when available.",
+      "upstream_dependency": "Kalshi live/public markets endpoint plus optional orderbook endpoint",
+      "warnings": []
+    },
+    "kalshi_orderbook_levels": {
+      "builder_name": "kwb.ingestion.kalshi_microstructure.capture_kalshi_microstructure_for_enabled_cities",
+      "city_keys_present": [
+        "nyc"
+      ],
+      "columns": [
+        "city_key",
+        "event_ticker",
+        "ingested_at",
+        "level_rank",
+        "market_status",
+        "market_ticker",
+        "orderbook_depth_requested",
+        "price_cents",
+        "price_level_structure",
+        "quantity",
+        "series_ticker",
+        "side",
+        "snapshot_ts",
+        "tick_size"
+      ],
+      "dataset": "kalshi_orderbook_levels",
+      "date_coverage": {
+        "max": "2026-03-26T18:17:00+0000",
+        "min": "2026-03-26T18:17:00+0000"
+      },
+      "duplicate_rows": 0,
+      "errors": [],
+      "exists": true,
+      "filename": "kalshi_orderbook_levels.parquet",
+      "local_raw_supported": false,
+      "path": "reports/kalshi_microstructure_demo_20260326/kalshi_orderbook_levels.parquet",
+      "requires_date_range": false,
+      "row_count": 4,
+      "source_of_truth": "Forward-captured Kalshi orderbook depth for enabled weather series. One row per side/level at each snapshot timestamp.",
+      "upstream_dependency": "Kalshi market orderbook endpoint",
+      "warnings": []
+    }
+  },
+  "enabled_city_keys": [
+    "nyc"
+  ],
+  "invalid_datasets": [],
+  "kalshi_history_progress": null,
+  "local_raw_files_discovered": [],
+  "missing_datasets": [],
+  "ready": true,
+  "recommendation": "Station mapping is incomplete but high-confidence recommendations exist. Run: kwb station recommend --write-config",
+  "required_datasets": [
+    "kalshi_market_microstructure_snapshots",
+    "kalshi_orderbook_levels"
+  ],
+  "staging_dir": "reports/kalshi_microstructure_demo_20260326",
+  "station_mapping": {
+    "auto_selectable_city_keys": [
+      "nyc"
+    ],
+    "issues": [
+      "Enabled city nyc is missing settlement_source_name.",
+      "Enabled city nyc is missing settlement_source_url.",
+      "Enabled city nyc is missing settlement_station_id.",
+      "Enabled city nyc is missing settlement_station_name.",
+      "Enabled city nyc is missing station_lat.",
+      "Enabled city nyc is missing station_lon."
+    ],
+    "ready": false,
+    "recommended_city_keys": [
+      "nyc"
+    ]
+  },
+  "upstream_environment": {
+    "ncei_api_token_configured": false
+  }
+}
