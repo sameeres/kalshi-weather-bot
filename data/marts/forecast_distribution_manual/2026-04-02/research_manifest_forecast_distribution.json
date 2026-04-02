@@ -1,0 +1,160 @@
+{
+  "comparison_summary": {
+    "parameters": {
+      "allow_no": false,
+      "contracts": 1,
+      "fee_per_contract": 0.01,
+      "fold_count": 3,
+      "max_price": 25.0,
+      "min_edge": 0.05,
+      "min_price": 0.0,
+      "min_samples": 30
+    },
+    "rows_with_both_models": 0,
+    "strategies": {
+      "climatology_only": {
+        "average_edge_at_entry": 0.0,
+        "average_net_pnl_per_trade": 0.0,
+        "fold_stability": {
+          "folds": [],
+          "net_pnl_mean": 0.0,
+          "net_pnl_std": 0.0,
+          "positive_fold_fraction": 0.0
+        },
+        "hit_rate": 0.0,
+        "total_gross_pnl": 0.0,
+        "total_net_pnl": 0.0,
+        "trade_count": 0
+      },
+      "forecast_only": {
+        "average_edge_at_entry": 0.0,
+        "average_net_pnl_per_trade": 0.0,
+        "fold_stability": {
+          "folds": [],
+          "net_pnl_mean": 0.0,
+          "net_pnl_std": 0.0,
+          "positive_fold_fraction": 0.0
+        },
+        "hit_rate": 0.0,
+        "total_gross_pnl": 0.0,
+        "total_net_pnl": 0.0,
+        "trade_count": 0
+      },
+      "intersection": {
+        "average_edge_at_entry": 0.0,
+        "average_net_pnl_per_trade": 0.0,
+        "fold_stability": {
+          "folds": [],
+          "net_pnl_mean": 0.0,
+          "net_pnl_std": 0.0,
+          "positive_fold_fraction": 0.0
+        },
+        "hit_rate": 0.0,
+        "total_gross_pnl": 0.0,
+        "total_net_pnl": 0.0,
+        "trade_count": 0
+      }
+    }
+  },
+  "decision_time_local": "10:00",
+  "forecast_coverage": {
+    "generated_at_utc": "2026-04-02T17:11:20.355190+00:00",
+    "matching_coverage": {
+      "backtest_rows_eligible": 1092,
+      "backtest_rows_matched": 0,
+      "by_city": [
+        {
+          "city_key": "chicago",
+          "eligible_rows": 546,
+          "matched_rows": 0,
+          "matched_share": 0.0
+        },
+        {
+          "city_key": "nyc",
+          "eligible_rows": 546,
+          "matched_rows": 0,
+          "matched_share": 0.0
+        }
+      ],
+      "matched_share": 0.0
+    },
+    "max_snapshot_age_hours": 18.0,
+    "snapshot_archive": {
+      "by_city": [
+        {
+          "city_key": "chicago",
+          "distinct_snapshot_count": 2,
+          "earliest_snapshot_ts": "2026-04-02T14:00:09.293028+00:00",
+          "latest_snapshot_ts": "2026-04-02T15:00:05.408860+00:00"
+        },
+        {
+          "city_key": "nyc",
+          "distinct_snapshot_count": 2,
+          "earliest_snapshot_ts": "2026-04-02T14:00:09.293028+00:00",
+          "latest_snapshot_ts": "2026-04-02T15:00:05.408860+00:00"
+        }
+      ],
+      "by_city_date": [
+        {
+          "city_key": "chicago",
+          "periods": 312,
+          "snapshot_date_local": "2026-04-02",
+          "snapshots": 2
+        },
+        {
+          "city_key": "nyc",
+          "periods": 312,
+          "snapshot_date_local": "2026-04-02",
+          "snapshots": 2
+        }
+      ],
+      "cities_covered": [
+        "chicago",
+        "nyc"
+      ],
+      "distinct_snapshots": 2,
+      "earliest_snapshot_ts": "2026-04-02T14:00:09.293028+00:00",
+      "latest_snapshot_ts": "2026-04-02T15:00:05.408860+00:00",
+      "rows": 624
+    },
+    "warnings": [
+      "No backtest rows matched a point-in-time forecast snapshot.",
+      "Matched-share is below 0.80; forward evaluation will accumulate slowly and may be biased by missing dates.",
+      "chicago has eligible backtest rows but no matched forecast snapshots.",
+      "nyc has eligible backtest rows but no matched forecast snapshots."
+    ]
+  },
+  "input_paths": {
+    "config_path": "configs/cities.yml",
+    "forecast_snapshots_path": "data/staging/nws_forecast_hourly_snapshots.parquet"
+  },
+  "output_paths": {
+    "backtest_dataset": "data/marts/forecast_distribution_manual/2026-04-02/backtest_dataset.parquet",
+    "climatology_scored": "data/marts/forecast_distribution_manual/2026-04-02/backtest_scored_climatology.parquet",
+    "comparison_report": "data/marts/forecast_distribution_manual/2026-04-02/backtest_report_forecast_distribution.md",
+    "comparison_summary": "data/marts/forecast_distribution_manual/2026-04-02/backtest_summary_forecast_distribution.json",
+    "comparison_trades": "data/marts/forecast_distribution_manual/2026-04-02/backtest_trades_forecast_distribution.parquet",
+    "forecast_coverage_json": "data/marts/forecast_distribution_manual/2026-04-02/forecast_snapshot_coverage.json",
+    "forecast_coverage_report": "data/marts/forecast_distribution_manual/2026-04-02/forecast_snapshot_coverage.md",
+    "forecast_scored": "data/marts/forecast_distribution_manual/2026-04-02/backtest_scored_forecast_distribution.parquet"
+  },
+  "parameters": {
+    "allow_no": false,
+    "contracts": 1,
+    "day_window": 1,
+    "fee_per_contract": 0.01,
+    "fold_count": 3,
+    "max_price": 25.0,
+    "min_edge": 0.05,
+    "min_lookback_samples": 30,
+    "min_price": 0.0,
+    "min_samples": 30
+  },
+  "row_counts": {
+    "backtest_rows": 1092,
+    "climatology_rows_scored": 1092,
+    "forecast_rows_scored": 0
+  },
+  "run_directory": "data/marts/forecast_distribution_manual/2026-04-02",
+  "run_timestamp_utc": "2026-04-02T17:11:09.427990+00:00"
+}

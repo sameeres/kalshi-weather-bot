@@ -10,10 +10,18 @@ from kwb.ingestion.kalshi_events import ingest_enabled_city_events, ingest_event
 from kwb.ingestion.kalshi_market_history import ingest_kalshi_market_history_for_enabled_cities
 from kwb.ingestion.kalshi_microstructure import capture_kalshi_microstructure_for_enabled_cities
 from kwb.ingestion.climate_normals import ingest_climate_normals_for_enabled_cities
+from kwb.ingestion.nws_forecast import (
+    NWSForecastIngestionError,
+    fetch_nws_forecast_snapshots,
+)
 from kwb.ingestion.build_staging import build_staging_datasets
 from kwb.ingestion.validate_staging import check_climatology_baseline_readiness, validate_staging_datasets
 from kwb.ingestion.weather_history import ingest_weather_history_for_enabled_cities
 from kwb.backtest.evaluate_climatology import ClimatologyEvaluationError, evaluate_climatology_strategy
+from kwb.backtest.evaluate_forecast_distribution import (
+    ForecastDistributionEvaluationError,
+    evaluate_forecast_distribution_signals,
+)
 from kwb.backtest.evaluate_climatology_executable import (
     ClimatologyExecutableEvaluationError,
     evaluate_climatology_executable_strategy,
@@ -28,9 +36,21 @@ from kwb.backtest.walkforward_climatology import (
 )
 from kwb.marts.backtest_dataset import BacktestDatasetBuildError, build_backtest_dataset
 from kwb.models.baseline_climatology import ClimatologyModelError, score_climatology_baseline
+from kwb.models.forecast_distribution import (
+    ForecastDistributionModelError,
+    score_forecast_distribution,
+)
 from kwb.research.run_climatology_baseline import (
     ClimatologyResearchRunError,
     run_climatology_baseline_research,
+)
+from kwb.research.run_forecast_distribution import (
+    ForecastDistributionResearchRunError,
+    run_forecast_distribution_research,
+)
+from kwb.research.combined_weather_research_summary import (
+    CombinedWeatherResearchSummaryError,
+    build_latest_combined_weather_research_summary,
 )
 from kwb.research.stress_test_climatology_frictions import (
     ClimatologyFrictionStressTestError,
@@ -502,6 +522,25 @@ def validate_staging_command(
         raise typer.Exit(code=1)
 
 
+@data_app.command("fetch-nws-forecast-snapshots")
+def fetch_nws_forecast_snapshots_command(
+    config_path: str = typer.Option("", help="Optional city config path override."),
+    output_dir: str = typer.Option("", help="Optional staging output directory override."),
+    append: bool = typer.Option(True, help="Append and dedupe against an existing staged forecast snapshot parquet."),
+) -> None:
+    try:
+        outpath = fetch_nws_forecast_snapshots(
+            config_path=Path(config_path) if config_path else CONFIG_DIR / "cities.yml",
+            output_dir=Path(output_dir) if output_dir else None,
+            append=append,
+        )
+    except NWSForecastIngestionError as exc:
+        console.print(f"[red]NWS forecast snapshot ingestion failed[/red]\n{exc}")
+        raise typer.Exit(code=1) from exc
+
+    console.print(f"Saved NWS forecast snapshots: {outpath}")
+
+
 @mart_app.command("backtest-dataset")
 def build_backtest_dataset_command(
     decision_time_local: str = typer.Option(..., help="Local decision time in HH:MM format."),
@@ -560,6 +599,39 @@ def run_climatology_baseline(
 
     console.print(
         f"Saved climatology baseline: {outpath} "
+        f"(rows scored: {summary['rows_scored']}, "
+        f"avg lookback: {summary['average_lookback_sample_size']}, "
+        f"Brier: {summary['brier_score']}, "
+        f"avg edge yes: {summary['average_edge_yes']})"
+    )
+
+
+@model_app.command("forecast-distribution")
+def run_forecast_distribution_model(
+    backtest_dataset_path: str = typer.Option("", help="Optional backtest dataset parquet override."),
+    history_path: str = typer.Option("", help="Optional staged weather_daily parquet override."),
+    forecast_snapshots_path: str = typer.Option("", help="Optional staged NWS forecast snapshots parquet override."),
+    output_dir: str = typer.Option("", help="Optional scored marts output directory override."),
+    day_window: int = typer.Option(1, help="Day-of-year half-window around month_day for the climatology sample."),
+    min_lookback_samples: int = typer.Option(30, help="Minimum required historical samples to score a row."),
+) -> None:
+    out_dir = Path(output_dir) if output_dir else None
+
+    try:
+        outpath, summary = score_forecast_distribution(
+            backtest_dataset_path=Path(backtest_dataset_path) if backtest_dataset_path else None,
+            history_path=Path(history_path) if history_path else None,
+            forecast_snapshots_path=Path(forecast_snapshots_path) if forecast_snapshots_path else None,
+            output_dir=out_dir,
+            day_window=day_window,
+            min_lookback_samples=min_lookback_samples,
+        )
+    except ForecastDistributionModelError as exc:
+        console.print(f"[red]Forecast distribution scoring failed[/red]\n{exc}")
+        raise typer.Exit(code=1) from exc
+
+    console.print(
+        f"Saved forecast distribution scores: {outpath} "
         f"(rows scored: {summary['rows_scored']}, "
         f"avg lookback: {summary['average_lookback_sample_size']}, "
         f"Brier: {summary['brier_score']}, "
@@ -643,6 +715,44 @@ def run_climatology_executable_backtest(
         f"Saved executable climatology evaluation: trades={trades_path} summary={summary_path} "
         f"(trades: {summary['trades_taken']}, yes trades: {summary['yes_trades_taken']}, "
         f"no trades: {summary['no_trades_taken']}, total net pnl: {summary['total_net_pnl']})"
+    )
+
+
+@backtest_app.command("evaluate-forecast-distribution")
+def run_forecast_distribution_backtest(
+    climatology_scored_path: str = typer.Option("", help="Optional climatology scored parquet override."),
+    forecast_scored_path: str = typer.Option("", help="Optional forecast distribution scored parquet override."),
+    output_dir: str = typer.Option("", help="Optional comparison output directory override."),
+    min_edge: float = typer.Option(0.05, help="Minimum edge required to take a trade."),
+    min_samples: int = typer.Option(30, help="Minimum lookback sample size required."),
+    min_price: float = typer.Option(0.0, help="Minimum entry price in cents."),
+    max_price: float = typer.Option(25.0, help="Maximum entry price in cents."),
+    allow_no: bool = typer.Option(False, help="Also allow NO-side trades."),
+    contracts: int = typer.Option(1, help="Contracts per selected trade."),
+    fee_per_contract: float = typer.Option(0.01, help="Flat fee per contract in dollars."),
+    fold_count: int = typer.Option(3, help="Number of date folds for stability summaries."),
+) -> None:
+    try:
+        trades_path, summary_path, report_path, summary = evaluate_forecast_distribution_signals(
+            climatology_scored_path=Path(climatology_scored_path) if climatology_scored_path else None,
+            forecast_scored_path=Path(forecast_scored_path) if forecast_scored_path else None,
+            output_dir=Path(output_dir) if output_dir else None,
+            min_edge=min_edge,
+            min_samples=min_samples,
+            min_price=min_price,
+            max_price=max_price,
+            allow_no=allow_no,
+            contracts=contracts,
+            fee_per_contract=fee_per_contract,
+            fold_count=fold_count,
+        )
+    except ForecastDistributionEvaluationError as exc:
+        console.print(f"[red]Forecast distribution evaluation failed[/red]\n{exc}")
+        raise typer.Exit(code=1) from exc
+
+    console.print(
+        f"Saved forecast distribution evaluation: trades={trades_path} summary={summary_path} report={report_path} "
+        f"(rows with both models: {summary['rows_with_both_models']})"
     )
 
 
@@ -877,6 +987,64 @@ def run_climatology_baseline_research_command(
     )
 
 
+@research_app.command("run-forecast-distribution")
+def run_forecast_distribution_research_command(
+    decision_time_local: str = typer.Option("10:00", help="Local decision time in HH:MM format."),
+    output_dir: str = typer.Option("", help="Optional research run output directory override."),
+    overwrite: bool = typer.Option(False, help="Allow writing into an existing non-empty output directory."),
+    config_path: str = typer.Option("", help="Optional city config path override."),
+    weather_path: str = typer.Option("", help="Optional staged weather_daily parquet override."),
+    normals_path: str = typer.Option("", help="Optional staged weather_normals_daily parquet override."),
+    markets_path: str = typer.Option("", help="Optional staged kalshi_markets parquet override."),
+    candles_path: str = typer.Option("", help="Optional staged kalshi_candles parquet override."),
+    history_path: str = typer.Option("", help="Optional climatology history parquet override."),
+    forecast_snapshots_path: str = typer.Option("", help="Optional staged NWS forecast snapshots parquet override."),
+    day_window: int = typer.Option(1, help="Day-of-year half-window around month_day for the climatology sample."),
+    min_lookback_samples: int = typer.Option(30, help="Minimum required historical samples to score a row."),
+    min_edge: float = typer.Option(0.05, help="Minimum one-shot trade edge."),
+    min_samples: int = typer.Option(30, help="Minimum one-shot lookback sample size."),
+    min_price: float = typer.Option(0.0, help="Minimum one-shot entry price in cents."),
+    max_price: float = typer.Option(25.0, help="Maximum one-shot entry price in cents."),
+    allow_no: bool = typer.Option(False, help="Also allow NO-side trades when supported."),
+    contracts: int = typer.Option(1, help="Contracts per selected trade."),
+    fee_per_contract: float = typer.Option(0.01, help="Flat fee per contract in dollars."),
+    fold_count: int = typer.Option(3, help="Number of date folds for stability summaries."),
+) -> None:
+    try:
+        run_dir, manifest_path, manifest = run_forecast_distribution_research(
+            decision_time_local=decision_time_local,
+            output_dir=Path(output_dir) if output_dir else None,
+            overwrite=overwrite,
+            config_path=Path(config_path) if config_path else None,
+            weather_path=Path(weather_path) if weather_path else None,
+            normals_path=Path(normals_path) if normals_path else None,
+            markets_path=Path(markets_path) if markets_path else None,
+            candles_path=Path(candles_path) if candles_path else None,
+            history_path=Path(history_path) if history_path else None,
+            forecast_snapshots_path=Path(forecast_snapshots_path) if forecast_snapshots_path else None,
+            day_window=day_window,
+            min_lookback_samples=min_lookback_samples,
+            min_edge=min_edge,
+            min_samples=min_samples,
+            min_price=min_price,
+            max_price=max_price,
+            allow_no=allow_no,
+            contracts=contracts,
+            fee_per_contract=fee_per_contract,
+            fold_count=fold_count,
+        )
+    except ForecastDistributionResearchRunError as exc:
+        console.print(f"[red]Forecast distribution research run failed[/red]\n{exc}")
+        raise typer.Exit(code=1) from exc
+
+    console.print(
+        f"Saved forecast distribution research bundle: run_dir={run_dir} manifest={manifest_path} "
+        f"coverage={manifest['output_paths']['forecast_coverage_report']} "
+        f"report={manifest['output_paths']['comparison_report']} "
+        f"(forecast rows scored: {manifest['row_counts']['forecast_rows_scored']})"
+    )
+
+
 @research_app.command("check-baseline-readiness")
 def check_baseline_readiness_command(
     config_path: str = typer.Option("", help="Optional city config path override."),
@@ -1087,6 +1255,28 @@ def time_of_day_sensitivity_climatology_command(
     console.print(
         f"Saved time-of-day sensitivity study: json={json_path} csv={csv_path} fold_csv={fold_csv_path} "
         f"report={markdown_path} (times tested: {len(report['times_tested'])})"
+    )
+
+
+@research_app.command("build-combined-weather-summary")
+def build_combined_weather_summary_command(
+    paper_root: str = typer.Option("", help="Optional paper-trading root override."),
+    forecast_root: str = typer.Option("", help="Optional forecast-distribution manual root override."),
+    output_path: str = typer.Option("", help="Optional combined markdown summary output path override."),
+) -> None:
+    try:
+        summary_path, payload = build_latest_combined_weather_research_summary(
+            paper_root=Path(paper_root) if paper_root else None,
+            forecast_root=Path(forecast_root) if forecast_root else None,
+            output_path=Path(output_path) if output_path else None,
+        )
+    except CombinedWeatherResearchSummaryError as exc:
+        console.print(f"[red]Combined weather research summary failed[/red]\n{exc}")
+        raise typer.Exit(code=1) from exc
+
+    console.print(
+        f"Saved combined weather research summary: {summary_path} "
+        f"(paper_date={payload['paper']['latest_date']}, forecast_run={payload['forecast']['latest_run']})"
     )
 
 

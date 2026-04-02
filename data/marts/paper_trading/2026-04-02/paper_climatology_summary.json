@@ -1,0 +1,1020 @@
+{
+  "best_skips_top": [
+    {
+      "city_key": "chicago",
+      "entry_price_cents": 2.0,
+      "event_date": "2026-04-02",
+      "fair_yes": 0.818182,
+      "market_ticker": "KXHIGHCHI-26APR02-T66",
+      "net_edge_yes": 0.788182,
+      "rejection_reasons": "market_not_open",
+      "snapshot_ts": "2026-04-02T15:09:13.999085+00:00"
+    },
+    {
+      "city_key": "chicago",
+      "entry_price_cents": 2.0,
+      "event_date": "2026-04-02",
+      "fair_yes": 0.818182,
+      "market_ticker": "KXHIGHCHI-26APR02-T66",
+      "net_edge_yes": 0.788182,
+      "rejection_reasons": "market_not_open",
+      "snapshot_ts": "2026-04-02T15:10:16.796212+00:00"
+    },
+    {
+      "city_key": "chicago",
+      "entry_price_cents": 2.0,
+      "event_date": "2026-04-02",
+      "fair_yes": 0.818182,
+      "market_ticker": "KXHIGHCHI-26APR02-T66",
+      "net_edge_yes": 0.788182,
+      "rejection_reasons": "market_not_open",
+      "snapshot_ts": "2026-04-02T15:11:19.653732+00:00"
+    },
+    {
+      "city_key": "chicago",
+      "entry_price_cents": 2.0,
+      "event_date": "2026-04-02",
+      "fair_yes": 0.818182,
+      "market_ticker": "KXHIGHCHI-26APR02-T66",
+      "net_edge_yes": 0.788182,
+      "rejection_reasons": "market_not_open",
+      "snapshot_ts": "2026-04-02T15:12:22.564909+00:00"
+    },
+    {
+      "city_key": "chicago",
+      "entry_price_cents": 2.0,
+      "event_date": "2026-04-02",
+      "fair_yes": 0.818182,
+      "market_ticker": "KXHIGHCHI-26APR02-T66",
+      "net_edge_yes": 0.788182,
+      "rejection_reasons": "market_not_open",
+      "snapshot_ts": "2026-04-02T15:13:25.509347+00:00"
+    },
+    {
+      "city_key": "chicago",
+      "entry_price_cents": 2.0,
+      "event_date": "2026-04-02",
+      "fair_yes": 0.818182,
+      "market_ticker": "KXHIGHCHI-26APR02-T66",
+      "net_edge_yes": 0.788182,
+      "rejection_reasons": "market_not_open",
+      "snapshot_ts": "2026-04-02T15:14:28.297359+00:00"
+    },
+    {
+      "city_key": "chicago",
+      "entry_price_cents": 2.0,
+      "event_date": "2026-04-02",
+      "fair_yes": 0.818182,
+      "market_ticker": "KXHIGHCHI-26APR02-T66",
+      "net_edge_yes": 0.788182,
+      "rejection_reasons": "market_not_open",
+      "snapshot_ts": "2026-04-02T15:15:31.472716+00:00"
+    },
+    {
+      "city_key": "chicago",
+      "entry_price_cents": 2.0,
+      "event_date": "2026-04-02",
+      "fair_yes": 0.818182,
+      "market_ticker": "KXHIGHCHI-26APR02-T66",
+      "net_edge_yes": 0.788182,
+      "rejection_reasons": "market_not_open",
+      "snapshot_ts": "2026-04-02T15:16:34.415534+00:00"
+    },
+    {
+      "city_key": "chicago",
+      "entry_price_cents": 2.0,
+      "event_date": "2026-04-02",
+      "fair_yes": 0.818182,
+      "market_ticker": "KXHIGHCHI-26APR02-T66",
+      "net_edge_yes": 0.788182,
+      "rejection_reasons": "market_not_open",
+      "snapshot_ts": "2026-04-02T15:17:37.103457+00:00"
+    },
+    {
+      "city_key": "chicago",
+      "entry_price_cents": 2.0,
+      "event_date": "2026-04-02",
+      "fair_yes": 0.818182,
+      "market_ticker": "KXHIGHCHI-26APR02-T66",
+      "net_edge_yes": 0.788182,
+      "rejection_reasons": "market_not_open",
+      "snapshot_ts": "2026-04-02T15:18:39.968584+00:00"
+    },
+    {
+      "city_key": "chicago",
+      "entry_price_cents": 2.0,
+      "event_date": "2026-04-02",
+      "fair_yes": 0.818182,
+      "market_ticker": "KXHIGHCHI-26APR02-T66",
+      "net_edge_yes": 0.788182,
+      "rejection_reasons": "market_not_open",
+      "snapshot_ts": "2026-04-02T15:19:42.719900+00:00"
+    },
+    {
+      "city_key": "chicago",
+      "entry_price_cents": 2.0,
+      "event_date": "2026-04-02",
+      "fair_yes": 0.818182,
+      "market_ticker": "KXHIGHCHI-26APR02-T66",
+      "net_edge_yes": 0.788182,
+      "rejection_reasons": "market_not_open",
+      "snapshot_ts": "2026-04-02T15:20:45.649174+00:00"
+    },
+    {
+      "city_key": "chicago",
+      "entry_price_cents": 2.0,
+      "event_date": "2026-04-02",
+      "fair_yes": 0.818182,
+      "market_ticker": "KXHIGHCHI-26APR02-T66",
+      "net_edge_yes": 0.788182,
+      "rejection_reasons": "market_not_open",
+      "snapshot_ts": "2026-04-02T15:21:48.659571+00:00"
+    },
+    {
+      "city_key": "chicago",
+      "entry_price_cents": 2.0,
+      "event_date": "2026-04-02",
+      "fair_yes": 0.818182,
+      "market_ticker": "KXHIGHCHI-26APR02-T66",
+      "net_edge_yes": 0.788182,
+      "rejection_reasons": "market_not_open",
+      "snapshot_ts": "2026-04-02T15:22:51.367500+00:00"
+    },
+    {
+      "city_key": "chicago",
+      "entry_price_cents": 2.0,
+      "event_date": "2026-04-02",
+      "fair_yes": 0.818182,
+      "market_ticker": "KXHIGHCHI-26APR02-T66",
+      "net_edge_yes": 0.788182,
+      "rejection_reasons": "market_not_open",
+      "snapshot_ts": "2026-04-02T15:23:54.375955+00:00"
+    },
+    {
+      "city_key": "chicago",
+      "entry_price_cents": 2.0,
+      "event_date": "2026-04-02",
+      "fair_yes": 0.818182,
+      "market_ticker": "KXHIGHCHI-26APR02-T66",
+      "net_edge_yes": 0.788182,
+      "rejection_reasons": "market_not_open",
+      "snapshot_ts": "2026-04-02T15:24:57.637788+00:00"
+    },
+    {
+      "city_key": "chicago",
+      "entry_price_cents": 2.0,
+      "event_date": "2026-04-02",
+      "fair_yes": 0.818182,
+      "market_ticker": "KXHIGHCHI-26APR02-T66",
+      "net_edge_yes": 0.788182,
+      "rejection_reasons": "market_not_open",
+      "snapshot_ts": "2026-04-02T15:26:00.754467+00:00"
+    },
+    {
+      "city_key": "chicago",
+      "entry_price_cents": 2.0,
+      "event_date": "2026-04-02",
+      "fair_yes": 0.818182,
+      "market_ticker": "KXHIGHCHI-26APR02-T66",
+      "net_edge_yes": 0.788182,
+      "rejection_reasons": "market_not_open",
+      "snapshot_ts": "2026-04-02T15:27:03.623277+00:00"
+    },
+    {
+      "city_key": "chicago",
+      "entry_price_cents": 2.0,
+      "event_date": "2026-04-02",
+      "fair_yes": 0.818182,
+      "market_ticker": "KXHIGHCHI-26APR02-T66",
+      "net_edge_yes": 0.788182,
+      "rejection_reasons": "market_not_open",
+      "snapshot_ts": "2026-04-02T15:28:06.572289+00:00"
+    },
+    {
+      "city_key": "chicago",
+      "entry_price_cents": 3.0,
+      "event_date": "2026-04-02",
+      "fair_yes": 0.818182,
+      "market_ticker": "KXHIGHCHI-26APR02-T66",
+      "net_edge_yes": 0.778182,
+      "rejection_reasons": "market_not_open",
+      "snapshot_ts": "2026-04-02T16:59:21.532733+00:00"
+    }
+  ],
+  "by_city": [
+    {
+      "city_key": "chicago",
+      "evaluations": 1440,
+      "gate_passed": 240,
+      "paper_trades": 0
+    },
+    {
+      "city_key": "nyc",
+      "evaluations": 1440,
+      "gate_passed": 76,
+      "paper_trades": 0
+    }
+  ],
+  "capture_summary": {
+    "captured_at_utc": "2026-04-02T17:09:56.577683+00:00",
+    "config_path": "/Users/faisalessa/kalshi-weather-bot/configs/cities.yml",
+    "enabled_city_keys": [
+      "nyc",
+      "chicago"
+    ],
+    "include_orderbook": true,
+    "iteration_summaries": [
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:05:01.544776+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:06:05.209241+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:07:08.391811+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:08:11.170648+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:09:13.999085+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:10:16.796212+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:11:19.653732+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:12:22.564909+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:13:25.509347+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:14:28.297359+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:15:31.472716+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:16:34.415534+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:17:37.103457+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:18:39.968584+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:19:42.719900+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:20:45.649174+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:21:48.659571+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:22:51.367500+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:23:54.375955+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:24:57.637788+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:26:00.754467+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:27:03.623277+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:28:06.572289+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:29:09.386808+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:30:12.276680+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:31:15.088048+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:32:18.069188+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:33:21.083836+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:34:24.002055+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:35:27.044839+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:36:29.926762+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:37:32.797984+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:38:35.668667+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:39:38.472481+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:40:41.348895+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:41:44.205986+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:42:47.217599+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:43:50.056492+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:44:53.074731+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:45:55.906538+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:46:59.174263+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:48:02.134936+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:49:05.079231+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:50:08.225702+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:51:11.113287+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:52:14.098482+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:53:17.124320+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:54:19.849073+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:55:22.923862+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:56:25.726807+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:57:28.881385+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:58:31.677250+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T15:59:34.603635+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:00:37.420050+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:01:40.222533+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:02:43.416890+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:03:46.214808+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:04:49.061108+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:05:51.976490+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:06:54.817790+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:07:57.614161+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:09:00.451111+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:10:03.658222+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:11:06.756933+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:12:09.633111+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:13:12.465780+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:14:15.325829+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:15:18.595400+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:16:21.446896+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:17:24.303495+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:18:26.995751+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:19:29.840332+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:20:32.642720+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:21:35.477126+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:22:38.372788+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:23:41.182910+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:24:44.094883+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:25:46.950662+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:26:49.768556+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:27:53.010147+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:28:55.873930+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:29:58.712225+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:31:01.560387+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:32:04.492162+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:33:07.535810+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:34:10.371779+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:35:13.217768+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:36:16.065711+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:37:18.938152+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:38:21.772912+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:39:24.614526+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:40:27.561311+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:41:30.428126+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:42:33.559840+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:43:36.672597+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:44:39.594604+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:45:42.784333+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:46:45.623665+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:47:48.627771+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:48:51.687967+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:49:54.558672+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:50:57.465988+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:52:00.317179+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:53:03.431825+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:54:06.461345+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:55:09.575341+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:56:12.817425+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:57:15.587447+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:58:18.743782+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T16:59:21.532733+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T17:00:24.420553+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T17:01:27.347264+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T17:02:30.485174+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T17:03:33.320551+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T17:04:36.294915+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T17:05:39.235859+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T17:06:42.137446+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T17:07:45.770854+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T17:08:50.000924+00:00"
+      },
+      {
+        "market_snapshots_captured": 24,
+        "orderbook_failures": [],
+        "orderbook_levels_captured": 0,
+        "snapshot_ts": "2026-04-02T17:09:53.459514+00:00"
+      }
+    ],
+    "iterations": 120,
+    "orderbook_depth": 10,
+    "orderbook_levels_captured": 0,
+    "orderbook_levels_output_path": "data/staging/kalshi_orderbook_levels.parquet",
+    "orderbook_levels_total_rows": 0,
+    "output_dir": "data/staging",
+    "poll_interval_seconds": 60.0,
+    "snapshot_output_path": "data/staging/kalshi_market_microstructure_snapshots.parquet",
+    "snapshot_rows_captured": 2880,
+    "snapshots_total_rows": 5760,
+    "status_filter": "open"
+  },
+  "config_path": "/Users/faisalessa/kalshi-weather-bot/configs/cities.yml",
+  "daily_dir": "data/marts/paper_trading/2026-04-02",
+  "decision": {
+    "contracts": 1,
+    "day_window": 1,
+    "fee_model": "kalshi_standard_taker",
+    "fee_per_contract": 0.0,
+    "max_spread_cents": 2.0,
+    "min_lookback_samples": 30,
+    "min_net_edge": 0.05
+  },
+  "gate": {
+    "chosen_side": "yes",
+    "contract_type": "or_below",
+    "max_entry_price_cents": 25.0
+  },
+  "generated_at_utc": "2026-04-02T17:11:07.580493+00:00",
+  "history_path": "/Users/faisalessa/kalshi-weather-bot/data/staging/weather_daily.parquet",
+  "microstructure_paths": {
+    "capture_summary_path": "data/staging/kalshi_microstructure_capture_summary.json",
+    "levels_path": "data/staging/kalshi_orderbook_levels.parquet",
+    "snapshots_path": "data/staging/kalshi_market_microstructure_snapshots.parquet"
+  },
+  "paper_config_path": "configs/paper_trading.yml",
+  "paper_only_mode": true,
+  "paper_trades_top": [],
+  "rejected_counts": [
+    {
+      "count": 2880,
+      "reason": "market_not_open"
+    },
+    {
+      "count": 2400,
+      "reason": "not_or_below_contract"
+    },
+    {
+      "count": 2160,
+      "reason": "net_edge_below_threshold"
+    },
+    {
+      "count": 477,
+      "reason": "spread_too_wide"
+    },
+    {
+      "count": 444,
+      "reason": "entry_price_above_gate"
+    },
+    {
+      "count": 444,
+      "reason": "entry_price_not_in_0_25_bucket"
+    }
+  ],
+  "strategy_name": "climatology_or_below_yes_cheap_v1",
+  "totals": {
+    "evaluation_rows_written": 2880,
+    "evaluations": 2880,
+    "gate_passed": 316,
+    "paper_trades": 0,
+    "trade_rows_written": 0
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "parameters": {
+    "allow_no": false,
+    "contracts": 1,
+    "fee_per_contract": 0.01,
+    "fold_count": 3,
+    "max_price": 25.0,
+    "min_edge": 0.05,
+    "min_price": 0.0,
+    "min_samples": 30
+  },
+  "rows_with_both_models": 0,
+  "strategies": {
+    "climatology_only": {
+      "average_edge_at_entry": 0.0,
+      "average_net_pnl_per_trade": 0.0,
+      "fold_stability": {
+        "folds": [],
+        "net_pnl_mean": 0.0,
+        "net_pnl_std": 0.0,
+        "positive_fold_fraction": 0.0
+      },
+      "hit_rate": 0.0,
+      "total_gross_pnl": 0.0,
+      "total_net_pnl": 0.0,
+      "trade_count": 0
+    },
+    "forecast_only": {
+      "average_edge_at_entry": 0.0,
+      "average_net_pnl_per_trade": 0.0,
+      "fold_stability": {
+        "folds": [],
+        "net_pnl_mean": 0.0,
+        "net_pnl_std": 0.0,
+        "positive_fold_fraction": 0.0
+      },
+      "hit_rate": 0.0,
+      "total_gross_pnl": 0.0,
+      "total_net_pnl": 0.0,
+      "trade_count": 0
+    },
+    "intersection": {
+      "average_edge_at_entry": 0.0,
+      "average_net_pnl_per_trade": 0.0,
+      "fold_stability": {
+        "folds": [],
+        "net_pnl_mean": 0.0,
+        "net_pnl_std": 0.0,
+        "positive_fold_fraction": 0.0
+      },
+      "hit_rate": 0.0,
+      "total_gross_pnl": 0.0,
+      "total_net_pnl": 0.0,
+      "trade_count": 0
+    }
+  }
+}

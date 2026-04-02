@@ -54,6 +54,27 @@ class ClimateNormalsDaily:
 
 
 @dataclass
+class NWSForecastSnapshot:
+    snapshot_ts: datetime
+    city_key: str
+    city_name: str
+    timezone: str
+    series_ticker: Optional[str]
+    settlement_station_id: Optional[str]
+    settlement_station_name: Optional[str]
+    forecast_hourly_url: Optional[str]
+    forecast_updated_at: Optional[str]
+    forecast_generated_at: Optional[str]
+    period_start_ts: datetime
+    period_end_ts: datetime
+    period_date_local: str
+    lead_hours: float
+    temperature_f: float
+    is_daytime: bool
+    short_forecast: Optional[str]
+
+
+@dataclass
 class MarketQuote:
     snapshot_ts: datetime
     market_ticker: str
@@ -226,6 +247,31 @@ class ClimatologyTradeRow:
     gross_pnl: float
     net_pnl: float
     lookback_sample_size: int
+    model_name: str
+
+
+@dataclass
+class ForecastDistributionScoredRow:
+    city_key: str
+    market_ticker: str
+    event_date: date
+    decision_ts: datetime
+    decision_price: float
+    resolved_yes: bool
+    model_prob_yes: float
+    model_prob_no: float
+    fair_yes: float
+    fair_no: float
+    edge_yes: float
+    lookback_sample_size: int
+    forecast_snapshot_ts: str
+    forecast_period_count: int
+    forecast_max_temp_f: float
+    forecast_min_temp_f: float
+    forecast_intraday_range_f: float
+    forecast_anomaly_f: float
+    distribution_sigma_f: float
+    snapshot_age_hours: float
     model_name: str
 
 

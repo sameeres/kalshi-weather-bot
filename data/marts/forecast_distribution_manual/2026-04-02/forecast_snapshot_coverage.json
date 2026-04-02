@@ -1,0 +1,67 @@
+{
+  "generated_at_utc": "2026-04-02T17:11:20.355190+00:00",
+  "matching_coverage": {
+    "backtest_rows_eligible": 1092,
+    "backtest_rows_matched": 0,
+    "by_city": [
+      {
+        "city_key": "chicago",
+        "eligible_rows": 546,
+        "matched_rows": 0,
+        "matched_share": 0.0
+      },
+      {
+        "city_key": "nyc",
+        "eligible_rows": 546,
+        "matched_rows": 0,
+        "matched_share": 0.0
+      }
+    ],
+    "matched_share": 0.0
+  },
+  "max_snapshot_age_hours": 18.0,
+  "snapshot_archive": {
+    "by_city": [
+      {
+        "city_key": "chicago",
+        "distinct_snapshot_count": 2,
+        "earliest_snapshot_ts": "2026-04-02T14:00:09.293028+00:00",
+        "latest_snapshot_ts": "2026-04-02T15:00:05.408860+00:00"
+      },
+      {
+        "city_key": "nyc",
+        "distinct_snapshot_count": 2,
+        "earliest_snapshot_ts": "2026-04-02T14:00:09.293028+00:00",
+        "latest_snapshot_ts": "2026-04-02T15:00:05.408860+00:00"
+      }
+    ],
+    "by_city_date": [
+      {
+        "city_key": "chicago",
+        "periods": 312,
+        "snapshot_date_local": "2026-04-02",
+        "snapshots": 2
+      },
+      {
+        "city_key": "nyc",
+        "periods": 312,
+        "snapshot_date_local": "2026-04-02",
+        "snapshots": 2
+      }
+    ],
+    "cities_covered": [
+      "chicago",
+      "nyc"
+    ],
+    "distinct_snapshots": 2,
+    "earliest_snapshot_ts": "2026-04-02T14:00:09.293028+00:00",
+    "latest_snapshot_ts": "2026-04-02T15:00:05.408860+00:00",
+    "rows": 624
+  },
+  "warnings": [
+    "No backtest rows matched a point-in-time forecast snapshot.",
+    "Matched-share is below 0.80; forward evaluation will accumulate slowly and may be biased by missing dates.",
+    "chicago has eligible backtest rows but no matched forecast snapshots.",
+    "nyc has eligible backtest rows but no matched forecast snapshots."
+  ]
+}
