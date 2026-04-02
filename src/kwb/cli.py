@@ -36,6 +36,14 @@ from kwb.research.stress_test_climatology_frictions import (
     ClimatologyFrictionStressTestError,
     stress_test_climatology_frictions,
 )
+from kwb.research.time_of_day_sensitivity import (
+    TimeOfDaySensitivityError,
+    run_time_of_day_sensitivity_study,
+)
+from kwb.research.reconcile_paper_climatology import (
+    PaperClimatologyReconciliationError,
+    reconcile_paper_climatology,
+)
 from kwb.execution.paper_climatology import (
     DEFAULT_PAPER_CONFIG_PATH,
     PaperClimatologyMonitorError,
@@ -985,6 +993,100 @@ def paper_monitor_climatology_command(
         f"Saved paper-only climatology monitor: evaluations={evaluations_path} trades={trades_path} "
         f"summary={summary_path} report={report_path} "
         f"(evaluations: {summary['totals']['evaluations']}, paper trades: {summary['totals']['paper_trades']})"
+    )
+
+
+@research_app.command("reconcile-paper-climatology")
+def reconcile_paper_climatology_command(
+    trade_date: str = typer.Option(
+        "",
+        help="Specific paper-trading date to reconcile in YYYY-MM-DD format. Defaults to the latest available date.",
+    ),
+    paper_output_root: str = typer.Option(
+        "",
+        help="Optional paper-trading output root override. Defaults to data/marts/paper_trading.",
+    ),
+    history_path: str = typer.Option(
+        "",
+        help="Optional settlement-aligned weather history parquet override.",
+    ),
+) -> None:
+    try:
+        (
+            reconciled_path,
+            summary_path,
+            report_path,
+            cumulative_scoreboard_path,
+            cumulative_summary_path,
+            cumulative_report_path,
+            payload,
+        ) = reconcile_paper_climatology(
+            trade_date=trade_date or None,
+            paper_output_root=Path(paper_output_root) if paper_output_root else None,
+            history_path=Path(history_path) if history_path else None,
+        )
+    except PaperClimatologyReconciliationError as exc:
+        console.print(f"[red]Paper climatology reconciliation failed[/red]\n{exc}")
+        raise typer.Exit(code=1) from exc
+
+    daily = payload["daily_summary"]["totals"]
+    console.print(
+        f"Saved paper climatology reconciliation: reconciled={reconciled_path} summary={summary_path} "
+        f"report={report_path} cumulative_scoreboard={cumulative_scoreboard_path} "
+        f"cumulative_summary={cumulative_summary_path} cumulative_report={cumulative_report_path} "
+        f"(trade_date: {payload['trade_date']}, resolved: {daily['resolved_trades']}, "
+        f"unresolved: {daily['unresolved_trades']}, net_pnl: {daily['realized_net_pnl_dollars']})"
+    )
+
+
+@research_app.command("time-of-day-sensitivity-climatology")
+def time_of_day_sensitivity_climatology_command(
+    times: str = typer.Option(
+        "08:00,09:00,10:00,11:00,12:00,13:00,14:00",
+        help="Comma-separated local decision times to test.",
+    ),
+    output_dir: str = typer.Option("", help="Optional output directory for the sweep artifacts."),
+    config_path: str = typer.Option("", help="Optional city config path override."),
+    weather_path: str = typer.Option("", help="Optional staged weather_daily parquet override."),
+    normals_path: str = typer.Option("", help="Optional staged weather_normals_daily parquet override."),
+    markets_path: str = typer.Option("", help="Optional staged kalshi_markets parquet override."),
+    candles_path: str = typer.Option("", help="Optional staged kalshi_candles parquet override."),
+    history_path: str = typer.Option("", help="Optional climatology history parquet override."),
+    walkforward_profile: str = typer.Option(
+        "research_short",
+        help="Walk-forward profile to use for all tested hours.",
+    ),
+    selection_metric: str = typer.Option(
+        "total_net_pnl",
+        help="Walk-forward validation objective: total_net_pnl or average_net_pnl_per_trade.",
+    ),
+    min_trades_for_selection: int = typer.Option(
+        1,
+        help="Minimum validation trades required to select thresholds for each hour.",
+    ),
+) -> None:
+    try:
+        parsed_times = tuple(chunk.strip() for chunk in times.split(",") if chunk.strip())
+        json_path, csv_path, fold_csv_path, markdown_path, report = run_time_of_day_sensitivity_study(
+            decision_times_local=parsed_times,
+            output_dir=Path(output_dir) if output_dir else None,
+            config_path=Path(config_path) if config_path else None,
+            weather_path=Path(weather_path) if weather_path else None,
+            normals_path=Path(normals_path) if normals_path else None,
+            markets_path=Path(markets_path) if markets_path else None,
+            candles_path=Path(candles_path) if candles_path else None,
+            history_path=Path(history_path) if history_path else None,
+            walkforward_profile=walkforward_profile,
+            selection_metric=selection_metric,
+            min_trades_for_selection=min_trades_for_selection,
+        )
+    except TimeOfDaySensitivityError as exc:
+        console.print(f"[red]Time-of-day sensitivity study failed[/red]\n{exc}")
+        raise typer.Exit(code=1) from exc
+
+    console.print(
+        f"Saved time-of-day sensitivity study: json={json_path} csv={csv_path} fold_csv={fold_csv_path} "
+        f"report={markdown_path} (times tested: {len(report['times_tested'])})"
     )
 
 

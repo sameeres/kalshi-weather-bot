@@ -1,0 +1,10 @@
+pricing_mode,subset,breakdown,bucket,trades_taken,yes_trades_taken,no_trades_taken,hit_rate,average_edge_at_entry,average_net_pnl_per_trade,total_net_pnl
+candle_proxy,selected_trades,city_key,chicago,58,58,0,0.017241,0.515102,-0.013276,-0.77
+candle_proxy,selected_trades,city_key,nyc,76,76,0,0.026316,0.448386,-0.006974,-0.53
+candle_proxy,selected_trades,entry_price_bucket,0-25,133,133,0,0.022556,0.475955,-0.007594,-1.01
+candle_proxy,selected_trades,entry_price_bucket,25-50,1,1,0,0.0,0.651176,-0.29,-0.29
+candle_proxy,selected_trades,month_bucket,2025-12,49,49,0,0.040816,0.424341,0.006735,0.33
+candle_proxy,selected_trades,month_bucket,2026-01,85,85,0,0.011765,0.507771,-0.019176,-1.63
+candle_proxy,selected_trades,sample_size_bucket,26+,134,134,0,0.022388,0.477263,-0.009701,-1.3
+candle_proxy,selected_trades,season_bucket,winter,134,134,0,0.022388,0.477263,-0.009701,-1.3
+candle_proxy,selected_trades,spread_bucket,0-2,134,134,0,0.022388,0.477263,-0.009701,-1.3

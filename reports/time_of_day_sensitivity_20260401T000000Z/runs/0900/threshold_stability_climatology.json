@@ -1,0 +1,26 @@
+{
+  "available": true,
+  "results_by_pricing_mode": {
+    "candle_proxy": {
+      "allow_no_selected_rate": 0.0,
+      "average_selected_min_edge": 0.05,
+      "average_selected_min_samples": 1.0,
+      "folds_scored": 3,
+      "max_spread_active_rate": 0.0,
+      "median_selected_min_edge": 0.05,
+      "median_selected_min_samples": 1.0,
+      "selected_allow_no_frequency": {
+        "False": 3
+      },
+      "selected_max_spread_frequency": {
+        "null": 3
+      },
+      "selected_min_edge_frequency": {
+        "0.05": 3
+      },
+      "selected_min_samples_frequency": {
+        "1": 3
+      }
+    }
+  }
+}

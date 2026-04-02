@@ -1,0 +1,52 @@
+{
+  "city_level_breakdown": [
+    {
+      "city_key": "chicago",
+      "realized_net_pnl_dollars": -0.19,
+      "resolved_trades": 1,
+      "win_rate_resolved": 0.0
+    },
+    {
+      "city_key": "nyc",
+      "realized_net_pnl_dollars": 0.79,
+      "resolved_trades": 1,
+      "win_rate_resolved": 1.0
+    }
+  ],
+  "date_level_breakdown": [
+    {
+      "gross_payout_dollars": 1.0,
+      "loss_count": 1,
+      "realized_net_pnl_dollars": 0.6,
+      "resolved_trades": 2,
+      "total_entry_cost_dollars": 0.38,
+      "total_fees_dollars": 0.02,
+      "total_paper_trades": 3,
+      "trade_date": "2026-03-31",
+      "unresolved_trades": 1,
+      "win_count": 1,
+      "win_rate_resolved": 0.5
+    }
+  ],
+  "generated_at_utc": "2026-03-31T23:08:56.121269+00:00",
+  "notes": [
+    "Cumulative outputs are rebuilt from daily reconciled trade files on every run.",
+    "Unresolved trades remain excluded from realized PnL until settlement-aligned weather observations are available."
+  ],
+  "paper_output_root": "/Users/faisalessa/kalshi-weather-bot/reports/paper_reconciliation_demo_20260401/paper_trading",
+  "pending_unresolved_trades": [
+    {
+      "market_ticker": "KXHIGHNY-26APR02-T39",
+      "notes": "missing_settlement_weather_observation",
+      "trade_date": "2026-03-31"
+    }
+  ],
+  "totals": {
+    "average_pnl_per_resolved_trade_dollars": 0.3,
+    "cumulative_realized_net_pnl_dollars": 0.6,
+    "cumulative_win_rate_resolved": 0.5,
+    "paper_monitor_days_reconciled": 1,
+    "resolved_trades": 2,
+    "unresolved_trades": 1
+  }
+}

@@ -1,0 +1,2 @@
+trade_date,total_paper_trades,resolved_trades,unresolved_trades,win_count,loss_count,gross_payout_dollars,total_entry_cost_dollars,total_fees_dollars,realized_net_pnl_dollars,win_rate_resolved
+2026-03-31,3,2,1,1,1,1.0,0.38,0.02,0.6,0.5

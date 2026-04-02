@@ -1,0 +1,1302 @@
+{
+  "best_scenario": {
+    "average_edge_at_entry": 0.468702,
+    "average_fee_per_trade": 0.0,
+    "average_gross_edge_at_entry": 0.468702,
+    "average_net_pnl_per_trade": -0.0,
+    "edge_lost_to_fees_per_trade": 0.0,
+    "fee_model": "flat_per_contract",
+    "folds_scored": 3,
+    "max_spread_grid": "none,5.0",
+    "min_edge_grid": "0.0,0.02,0.05",
+    "rows_evaluated": 540,
+    "scenario_code": "A",
+    "scenario_label": "Executable No Fees",
+    "total_fees": 0.0,
+    "total_net_pnl": -0.0,
+    "trades_taken": 148,
+    "win_rate": 0.027027
+  },
+  "generated_at_utc": "2026-03-31T22:57:50.386276+00:00",
+  "modeled_assumptions": {
+    "inferred_from_available_market_data": [
+      "Scenario D adds a 2-cent max spread filter using stored quote spread data."
+    ],
+    "official_and_directly_modeled": [
+      "Immediate executable buys use the staged ask-side proxy.",
+      "Kalshi standard taker fee formula: ceil_to_cent(0.07 * C * P * (1 - P)).",
+      "No settlement fee or membership fee modeled.",
+      "No maker-fill assumptions used."
+    ],
+    "unknown_or_not_modelable": [
+      "No staged orderbook depth beyond top-of-book proxies, so walking the book cannot be modeled.",
+      "No verified market-specific tick-size metadata was found, so one-tick adverse-entry sensitivity was not modeled.",
+      "Market impact beyond the best quoted price remains unmodeled."
+    ]
+  },
+  "scenario_reports": [
+    {
+      "aggregate": {
+        "average_edge_at_entry": 0.468702,
+        "average_fee_per_trade": 0.0,
+        "average_gross_edge_at_entry": 0.468702,
+        "average_net_pnl_per_trade": -0.0,
+        "edge_lost_to_fees_per_trade": 0.0,
+        "folds_scored": 3,
+        "rows_evaluated": 540,
+        "total_fees": 0.0,
+        "total_net_pnl": -0.0,
+        "trades_taken": 148,
+        "win_rate": 0.027027
+      },
+      "assumption_type": "baseline",
+      "breakdowns": {
+        "contract_type": [
+          {
+            "average_fee_per_trade": 0.0,
+            "average_net_pnl_per_trade": -0.014706,
+            "contract_type": "between",
+            "total_net_pnl": -0.25,
+            "trades": 17,
+            "win_rate": 0.0
+          },
+          {
+            "average_fee_per_trade": 0.0,
+            "average_net_pnl_per_trade": -0.027571,
+            "contract_type": "or_above",
+            "total_net_pnl": -1.93,
+            "trades": 70,
+            "win_rate": 0.0
+          },
+          {
+            "average_fee_per_trade": 0.0,
+            "average_net_pnl_per_trade": 0.035738,
+            "contract_type": "or_below",
+            "total_net_pnl": 2.18,
+            "trades": 61,
+            "win_rate": 0.065574
+          }
+        ],
+        "entry_price_bucket": [
+          {
+            "average_fee_per_trade": 0.0,
+            "average_net_pnl_per_trade": 0.004384,
+            "entry_price_bucket": "0-25",
+            "total_net_pnl": 0.64,
+            "trades": 146,
+            "win_rate": 0.027397
+          },
+          {
+            "average_fee_per_trade": 0.0,
+            "average_net_pnl_per_trade": -0.32,
+            "entry_price_bucket": "25-50",
+            "total_net_pnl": -0.64,
+            "trades": 2,
+            "win_rate": 0.0
+          }
+        ]
+      },
+      "description": "Current executable baseline with no modeled fees.",
+      "diagnostics_highlights": {
+        "entry_price_bucket": {
+          "bottom_bucket": {
+            "average_edge_at_entry": 0.61833,
+            "average_net_pnl_per_trade": -0.32,
+            "breakdown": "entry_price_bucket",
+            "bucket": "25-50",
+            "hit_rate": 0.0,
+            "no_trades_taken": 0,
+            "pricing_mode": "candle_proxy",
+            "subset": "selected_trades",
+            "total_net_pnl": -0.64,
+            "trades_taken": 2,
+            "yes_trades_taken": 2
+          },
+          "top_bucket": {
+            "average_edge_at_entry": 0.466653,
+            "average_net_pnl_per_trade": 0.004384,
+            "breakdown": "entry_price_bucket",
+            "bucket": "0-25",
+            "hit_rate": 0.027397,
+            "no_trades_taken": 0,
+            "pricing_mode": "candle_proxy",
+            "subset": "selected_trades",
+            "total_net_pnl": 0.64,
+            "trades_taken": 146,
+            "yes_trades_taken": 146
+          }
+        },
+        "month_bucket": {
+          "bottom_bucket": {
+            "average_edge_at_entry": 0.51683,
+            "average_net_pnl_per_trade": -0.011889,
+            "breakdown": "month_bucket",
+            "bucket": "2026-01",
+            "hit_rate": 0.011111,
+            "no_trades_taken": 0,
+            "pricing_mode": "candle_proxy",
+            "subset": "selected_trades",
+            "total_net_pnl": -1.07,
+            "trades_taken": 90,
+            "yes_trades_taken": 90
+          },
+          "top_bucket": {
+            "average_edge_at_entry": 0.394022,
+            "average_net_pnl_per_trade": 0.018448,
+            "breakdown": "month_bucket",
+            "bucket": "2025-12",
+            "hit_rate": 0.051724,
+            "no_trades_taken": 0,
+            "pricing_mode": "candle_proxy",
+            "subset": "selected_trades",
+            "total_net_pnl": 1.07,
+            "trades_taken": 58,
+            "yes_trades_taken": 58
+          }
+        },
+        "spread_bucket": {
+          "bottom_bucket": {
+            "average_edge_at_entry": 0.465862,
+            "average_net_pnl_per_trade": -0.000284,
+            "breakdown": "spread_bucket",
+            "bucket": "0-2",
+            "hit_rate": 0.021277,
+            "no_trades_taken": 0,
+            "pricing_mode": "candle_proxy",
+            "subset": "selected_trades",
+            "total_net_pnl": -0.04,
+            "trades_taken": 141,
+            "yes_trades_taken": 141
+          },
+          "top_bucket": {
+            "average_edge_at_entry": 0.525909,
+            "average_net_pnl_per_trade": 0.005714,
+            "breakdown": "spread_bucket",
+            "bucket": "2-5",
+            "hit_rate": 0.142857,
+            "no_trades_taken": 0,
+            "pricing_mode": "candle_proxy",
+            "subset": "selected_trades",
+            "total_net_pnl": 0.04,
+            "trades_taken": 7,
+            "yes_trades_taken": 7
+          }
+        }
+      },
+      "output_paths": {
+        "diagnostics_csv": "reports/time_of_day_sensitivity_20260401T000000Z/friction/1100/scenario_a/walkforward_diagnostics_climatology.csv",
+        "rebuilt_trades_csv": "reports/time_of_day_sensitivity_20260401T000000Z/friction/1100/scenario_a/scenario_trades_rebuilt.csv",
+        "results_csv": "reports/time_of_day_sensitivity_20260401T000000Z/friction/1100/scenario_a/walkforward_results_climatology.csv",
+        "summary_json": "reports/time_of_day_sensitivity_20260401T000000Z/friction/1100/scenario_a/walkforward_summary_climatology.json"
+      },
+      "scenario_code": "A",
+      "scenario_label": "Executable No Fees",
+      "walkforward_summary": {
+        "fold_count": 3,
+        "fold_results_preview": [
+          {
+            "fold_number": 1,
+            "pricing_mode": "candle_proxy",
+            "selected_allow_no": false,
+            "selected_max_price": 100.0,
+            "selected_max_spread": 5.0,
+            "selected_min_edge": 0.05,
+            "selected_min_price": 0.0,
+            "selected_min_samples": 1,
+            "skip_reason": "",
+            "test_average_edge_at_entry": 0.401783,
+            "test_brier_score": 0.158036,
+            "test_end": "2025-12-30",
+            "test_hit_rate": 0.056604,
+            "test_no_trades": 0,
+            "test_rows_evaluated": 180,
+            "test_start": "2025-12-16",
+            "test_total_gross_pnl": 1.23,
+            "test_total_net_pnl": 1.23,
+            "test_trades": 53,
+            "test_yes_trades": 53,
+            "train_end": "2025-11-30",
+            "train_start": "2025-11-01",
+            "validation_average_net_pnl_per_trade": -0.014468,
+            "validation_end": "2025-12-15",
+            "validation_start": "2025-12-01",
+            "validation_total_net_pnl": -0.68,
+            "validation_trades": 47
+          },
+          {
+            "fold_number": 2,
+            "pricing_mode": "candle_proxy",
+            "selected_allow_no": false,
+            "selected_max_price": 100.0,
+            "selected_max_spread": 5.0,
+            "selected_min_edge": 0.05,
+            "selected_min_price": 0.0,
+            "selected_min_samples": 1,
+            "skip_reason": "",
+            "test_average_edge_at_entry": 0.479798,
+            "test_brier_score": 0.182701,
+            "test_end": "2026-01-14",
+            "test_hit_rate": 0.02,
+            "test_no_trades": 0,
+            "test_rows_evaluated": 180,
+            "test_start": "2025-12-31",
+            "test_total_gross_pnl": 0.01,
+            "test_total_net_pnl": 0.01,
+            "test_trades": 50,
+            "test_yes_trades": 50,
+            "train_end": "2025-12-15",
+            "train_start": "2025-11-01",
+            "validation_average_net_pnl_per_trade": 0.023208,
+            "validation_end": "2025-12-30",
+            "validation_start": "2025-12-16",
+            "validation_total_net_pnl": 1.23,
+            "validation_trades": 53
+          },
+          {
+            "fold_number": 3,
+            "pricing_mode": "candle_proxy",
+            "selected_allow_no": false,
+            "selected_max_price": 100.0,
+            "selected_max_spread": NaN,
+            "selected_min_edge": 0.05,
+            "selected_min_price": 0.0,
+            "selected_min_samples": 1,
+            "skip_reason": "",
+            "test_average_edge_at_entry": 0.53519,
+            "test_brier_score": 0.194699,
+            "test_end": "2026-01-29",
+            "test_hit_rate": 0.0,
+            "test_no_trades": 0,
+            "test_rows_evaluated": 180,
+            "test_start": "2026-01-15",
+            "test_total_gross_pnl": -1.24,
+            "test_total_net_pnl": -1.24,
+            "test_trades": 45,
+            "test_yes_trades": 45,
+            "train_end": "2025-12-30",
+            "train_start": "2025-11-01",
+            "validation_average_net_pnl_per_trade": 0.0002,
+            "validation_end": "2026-01-14",
+            "validation_start": "2025-12-31",
+            "validation_total_net_pnl": 0.01,
+            "validation_trades": 50
+          }
+        ],
+        "pricing_mode": "candle_proxy",
+        "results_by_pricing_mode": {
+          "candle_proxy": {
+            "average_edge_at_entry": 0.468702,
+            "average_gross_pnl_per_trade": -0.0,
+            "average_net_pnl_per_trade": -0.0,
+            "brier_score": 0.178479,
+            "folds_attempted": 3,
+            "folds_scored": 3,
+            "hit_rate": 0.027027,
+            "no_trades_taken": 0,
+            "pricing_mode": "candle_proxy",
+            "rows_evaluated": 540,
+            "selected_thresholds_per_fold": [
+              {
+                "fold_number": 1,
+                "selected_allow_no": false,
+                "selected_max_price": 100.0,
+                "selected_max_spread": 5.0,
+                "selected_min_edge": 0.05,
+                "selected_min_price": 0.0,
+                "selected_min_samples": 1
+              },
+              {
+                "fold_number": 2,
+                "selected_allow_no": false,
+                "selected_max_price": 100.0,
+                "selected_max_spread": 5.0,
+                "selected_min_edge": 0.05,
+                "selected_min_price": 0.0,
+                "selected_min_samples": 1
+              },
+              {
+                "fold_number": 3,
+                "selected_allow_no": false,
+                "selected_max_price": 100.0,
+                "selected_max_spread": NaN,
+                "selected_min_edge": 0.05,
+                "selected_min_price": 0.0,
+                "selected_min_samples": 1
+              }
+            ],
+            "total_gross_pnl": -0.0,
+            "total_net_pnl": -0.0,
+            "trades_taken": 148,
+            "yes_trades_taken": 148
+          }
+        },
+        "rows_available": 540,
+        "selection_config": {
+          "min_trades_for_selection": 1,
+          "selection_metric": "total_net_pnl"
+        },
+        "window_config": {
+          "expanding": true,
+          "step_window": 15,
+          "test_window": 15,
+          "train_window": 30,
+          "validation_window": 15,
+          "window_profile": "research_short"
+        }
+      }
+    },
+    {
+      "aggregate": {
+        "average_edge_at_entry": 0.47904,
+        "average_fee_per_trade": 0.010213,
+        "average_gross_edge_at_entry": 0.489253,
+        "average_net_pnl_per_trade": -0.009574,
+        "edge_lost_to_fees_per_trade": 0.010213,
+        "folds_scored": 3,
+        "rows_evaluated": 540,
+        "total_fees": 1.44,
+        "total_net_pnl": -1.35,
+        "trades_taken": 141,
+        "win_rate": 0.028369
+      },
+      "assumption_type": "official_directly_modeled",
+      "breakdowns": {
+        "contract_type": [
+          {
+            "average_fee_per_trade": 0.01,
+            "average_net_pnl_per_trade": -0.027273,
+            "contract_type": "between",
+            "total_net_pnl": -0.3,
+            "trades": 11,
+            "win_rate": 0.0
+          },
+          {
+            "average_fee_per_trade": 0.010145,
+            "average_net_pnl_per_trade": -0.037681,
+            "contract_type": "or_above",
+            "total_net_pnl": -2.6,
+            "trades": 69,
+            "win_rate": 0.0
+          },
+          {
+            "average_fee_per_trade": 0.010328,
+            "average_net_pnl_per_trade": 0.02541,
+            "contract_type": "or_below",
+            "total_net_pnl": 1.55,
+            "trades": 61,
+            "win_rate": 0.065574
+          }
+        ],
+        "entry_price_bucket": [
+          {
+            "average_fee_per_trade": 0.010072,
+            "average_net_pnl_per_trade": -0.00482,
+            "entry_price_bucket": "0-25",
+            "total_net_pnl": -0.67,
+            "trades": 139,
+            "win_rate": 0.028777
+          },
+          {
+            "average_fee_per_trade": 0.02,
+            "average_net_pnl_per_trade": -0.34,
+            "entry_price_bucket": "25-50",
+            "total_net_pnl": -0.68,
+            "trades": 2,
+            "win_rate": 0.0
+          }
+        ]
+      },
+      "description": "Executable pricing plus official Kalshi standard taker fees on immediate matches.",
+      "diagnostics_highlights": {
+        "entry_price_bucket": {
+          "bottom_bucket": {
+            "average_edge_at_entry": 0.59833,
+            "average_net_pnl_per_trade": -0.34,
+            "breakdown": "entry_price_bucket",
+            "bucket": "25-50",
+            "hit_rate": 0.0,
+            "no_trades_taken": 0,
+            "pricing_mode": "candle_proxy",
+            "subset": "selected_trades",
+            "total_net_pnl": -0.68,
+            "trades_taken": 2,
+            "yes_trades_taken": 2
+          },
+          "top_bucket": {
+            "average_edge_at_entry": 0.477323,
+            "average_net_pnl_per_trade": -0.00482,
+            "breakdown": "entry_price_bucket",
+            "bucket": "0-25",
+            "hit_rate": 0.028777,
+            "no_trades_taken": 0,
+            "pricing_mode": "candle_proxy",
+            "subset": "selected_trades",
+            "total_net_pnl": -0.67,
+            "trades_taken": 139,
+            "yes_trades_taken": 139
+          }
+        },
+        "month_bucket": {
+          "bottom_bucket": {
+            "average_edge_at_entry": 0.51187,
+            "average_net_pnl_per_trade": -0.021798,
+            "breakdown": "month_bucket",
+            "bucket": "2026-01",
+            "hit_rate": 0.011236,
+            "no_trades_taken": 0,
+            "pricing_mode": "candle_proxy",
+            "subset": "selected_trades",
+            "total_net_pnl": -1.94,
+            "trades_taken": 89,
+            "yes_trades_taken": 89
+          },
+          "top_bucket": {
+            "average_edge_at_entry": 0.42285,
+            "average_net_pnl_per_trade": 0.011346,
+            "breakdown": "month_bucket",
+            "bucket": "2025-12",
+            "hit_rate": 0.057692,
+            "no_trades_taken": 0,
+            "pricing_mode": "candle_proxy",
+            "subset": "selected_trades",
+            "total_net_pnl": 0.59,
+            "trades_taken": 52,
+            "yes_trades_taken": 52
+          }
+        },
+        "spread_bucket": {
+          "bottom_bucket": {
+            "average_edge_at_entry": 0.477263,
+            "average_net_pnl_per_trade": -0.009701,
+            "breakdown": "spread_bucket",
+            "bucket": "0-2",
+            "hit_rate": 0.022388,
+            "no_trades_taken": 0,
+            "pricing_mode": "candle_proxy",
+            "subset": "selected_trades",
+            "total_net_pnl": -1.3,
+            "trades_taken": 134,
+            "yes_trades_taken": 134
+          },
+          "top_bucket": {
+            "average_edge_at_entry": 0.513052,
+            "average_net_pnl_per_trade": -0.007143,
+            "breakdown": "spread_bucket",
+            "bucket": "2-5",
+            "hit_rate": 0.142857,
+            "no_trades_taken": 0,
+            "pricing_mode": "candle_proxy",
+            "subset": "selected_trades",
+            "total_net_pnl": -0.05,
+            "trades_taken": 7,
+            "yes_trades_taken": 7
+          }
+        }
+      },
+      "output_paths": {
+        "diagnostics_csv": "reports/time_of_day_sensitivity_20260401T000000Z/friction/1100/scenario_b/walkforward_diagnostics_climatology.csv",
+        "rebuilt_trades_csv": "reports/time_of_day_sensitivity_20260401T000000Z/friction/1100/scenario_b/scenario_trades_rebuilt.csv",
+        "results_csv": "reports/time_of_day_sensitivity_20260401T000000Z/friction/1100/scenario_b/walkforward_results_climatology.csv",
+        "summary_json": "reports/time_of_day_sensitivity_20260401T000000Z/friction/1100/scenario_b/walkforward_summary_climatology.json"
+      },
+      "scenario_code": "B",
+      "scenario_label": "Executable + Standard Taker Fees",
+      "walkforward_summary": {
+        "fold_count": 3,
+        "fold_results_preview": [
+          {
+            "fold_number": 1,
+            "pricing_mode": "candle_proxy",
+            "selected_allow_no": false,
+            "selected_max_price": 100.0,
+            "selected_max_spread": 5.0,
+            "selected_min_edge": 0.05,
+            "selected_min_price": 0.0,
+            "selected_min_samples": 1,
+            "skip_reason": "",
+            "test_average_edge_at_entry": 0.42754,
+            "test_brier_score": 0.158036,
+            "test_end": "2025-12-30",
+            "test_hit_rate": 0.0625,
+            "test_no_trades": 0,
+            "test_rows_evaluated": 180,
+            "test_start": "2025-12-16",
+            "test_total_gross_pnl": 1.28,
+            "test_total_net_pnl": 0.78,
+            "test_trades": 48,
+            "test_yes_trades": 48,
+            "train_end": "2025-11-30",
+            "train_start": "2025-11-01",
+            "validation_average_net_pnl_per_trade": -0.024773,
+            "validation_end": "2025-12-15",
+            "validation_start": "2025-12-01",
+            "validation_total_net_pnl": -1.09,
+            "validation_trades": 44
+          },
+          {
+            "fold_number": 2,
+            "pricing_mode": "candle_proxy",
+            "selected_allow_no": false,
+            "selected_max_price": 100.0,
+            "selected_max_spread": 5.0,
+            "selected_min_edge": 0.05,
+            "selected_min_price": 0.0,
+            "selected_min_samples": 1,
+            "skip_reason": "",
+            "test_average_edge_at_entry": 0.487482,
+            "test_brier_score": 0.182701,
+            "test_end": "2026-01-14",
+            "test_hit_rate": 0.020833,
+            "test_no_trades": 0,
+            "test_rows_evaluated": 180,
+            "test_start": "2025-12-31",
+            "test_total_gross_pnl": 0.05,
+            "test_total_net_pnl": -0.43,
+            "test_trades": 48,
+            "test_yes_trades": 48,
+            "train_end": "2025-12-15",
+            "train_start": "2025-11-01",
+            "validation_average_net_pnl_per_trade": 0.01625,
+            "validation_end": "2025-12-30",
+            "validation_start": "2025-12-16",
+            "validation_total_net_pnl": 0.78,
+            "validation_trades": 48
+          },
+          {
+            "fold_number": 3,
+            "pricing_mode": "candle_proxy",
+            "selected_allow_no": false,
+            "selected_max_price": 100.0,
+            "selected_max_spread": NaN,
+            "selected_min_edge": 0.05,
+            "selected_min_price": 0.0,
+            "selected_min_samples": 1,
+            "skip_reason": "",
+            "test_average_edge_at_entry": 0.524967,
+            "test_brier_score": 0.194699,
+            "test_end": "2026-01-29",
+            "test_hit_rate": 0.0,
+            "test_no_trades": 0,
+            "test_rows_evaluated": 180,
+            "test_start": "2026-01-15",
+            "test_total_gross_pnl": -1.24,
+            "test_total_net_pnl": -1.7,
+            "test_trades": 45,
+            "test_yes_trades": 45,
+            "train_end": "2025-12-30",
+            "train_start": "2025-11-01",
+            "validation_average_net_pnl_per_trade": -0.008958,
+            "validation_end": "2026-01-14",
+            "validation_start": "2025-12-31",
+            "validation_total_net_pnl": -0.43,
+            "validation_trades": 48
+          }
+        ],
+        "pricing_mode": "candle_proxy",
+        "results_by_pricing_mode": {
+          "candle_proxy": {
+            "average_edge_at_entry": 0.47904,
+            "average_gross_pnl_per_trade": 0.000638,
+            "average_net_pnl_per_trade": -0.009574,
+            "brier_score": 0.178479,
+            "folds_attempted": 3,
+            "folds_scored": 3,
+            "hit_rate": 0.028369,
+            "no_trades_taken": 0,
+            "pricing_mode": "candle_proxy",
+            "rows_evaluated": 540,
+            "selected_thresholds_per_fold": [
+              {
+                "fold_number": 1,
+                "selected_allow_no": false,
+                "selected_max_price": 100.0,
+                "selected_max_spread": 5.0,
+                "selected_min_edge": 0.05,
+                "selected_min_price": 0.0,
+                "selected_min_samples": 1
+              },
+              {
+                "fold_number": 2,
+                "selected_allow_no": false,
+                "selected_max_price": 100.0,
+                "selected_max_spread": 5.0,
+                "selected_min_edge": 0.05,
+                "selected_min_price": 0.0,
+                "selected_min_samples": 1
+              },
+              {
+                "fold_number": 3,
+                "selected_allow_no": false,
+                "selected_max_price": 100.0,
+                "selected_max_spread": NaN,
+                "selected_min_edge": 0.05,
+                "selected_min_price": 0.0,
+                "selected_min_samples": 1
+              }
+            ],
+            "total_gross_pnl": 0.09,
+            "total_net_pnl": -1.35,
+            "trades_taken": 141,
+            "yes_trades_taken": 141
+          }
+        },
+        "rows_available": 540,
+        "selection_config": {
+          "min_trades_for_selection": 1,
+          "selection_metric": "total_net_pnl"
+        },
+        "window_config": {
+          "expanding": true,
+          "step_window": 15,
+          "test_window": 15,
+          "train_window": 30,
+          "validation_window": 15,
+          "window_profile": "research_short"
+        }
+      }
+    },
+    {
+      "aggregate": {
+        "average_edge_at_entry": 0.47904,
+        "average_fee_per_trade": 0.010213,
+        "average_gross_edge_at_entry": 0.489253,
+        "average_net_pnl_per_trade": -0.009574,
+        "edge_lost_to_fees_per_trade": 0.010213,
+        "folds_scored": 3,
+        "rows_evaluated": 540,
+        "total_fees": 1.44,
+        "total_net_pnl": -1.35,
+        "trades_taken": 141,
+        "win_rate": 0.028369
+      },
+      "assumption_type": "official_directly_modeled",
+      "breakdowns": {
+        "contract_type": [
+          {
+            "average_fee_per_trade": 0.01,
+            "average_net_pnl_per_trade": -0.027273,
+            "contract_type": "between",
+            "total_net_pnl": -0.3,
+            "trades": 11,
+            "win_rate": 0.0
+          },
+          {
+            "average_fee_per_trade": 0.010145,
+            "average_net_pnl_per_trade": -0.037681,
+            "contract_type": "or_above",
+            "total_net_pnl": -2.6,
+            "trades": 69,
+            "win_rate": 0.0
+          },
+          {
+            "average_fee_per_trade": 0.010328,
+            "average_net_pnl_per_trade": 0.02541,
+            "contract_type": "or_below",
+            "total_net_pnl": 1.55,
+            "trades": 61,
+            "win_rate": 0.065574
+          }
+        ],
+        "entry_price_bucket": [
+          {
+            "average_fee_per_trade": 0.010072,
+            "average_net_pnl_per_trade": -0.00482,
+            "entry_price_bucket": "0-25",
+            "total_net_pnl": -0.67,
+            "trades": 139,
+            "win_rate": 0.028777
+          },
+          {
+            "average_fee_per_trade": 0.02,
+            "average_net_pnl_per_trade": -0.34,
+            "entry_price_bucket": "25-50",
+            "total_net_pnl": -0.68,
+            "trades": 2,
+            "win_rate": 0.0
+          }
+        ]
+      },
+      "description": "Official taker fees plus a stricter minimum executable edge threshold.",
+      "diagnostics_highlights": {
+        "entry_price_bucket": {
+          "bottom_bucket": {
+            "average_edge_at_entry": 0.59833,
+            "average_net_pnl_per_trade": -0.34,
+            "breakdown": "entry_price_bucket",
+            "bucket": "25-50",
+            "hit_rate": 0.0,
+            "no_trades_taken": 0,
+            "pricing_mode": "candle_proxy",
+            "subset": "selected_trades",
+            "total_net_pnl": -0.68,
+            "trades_taken": 2,
+            "yes_trades_taken": 2
+          },
+          "top_bucket": {
+            "average_edge_at_entry": 0.477323,
+            "average_net_pnl_per_trade": -0.00482,
+            "breakdown": "entry_price_bucket",
+            "bucket": "0-25",
+            "hit_rate": 0.028777,
+            "no_trades_taken": 0,
+            "pricing_mode": "candle_proxy",
+            "subset": "selected_trades",
+            "total_net_pnl": -0.67,
+            "trades_taken": 139,
+            "yes_trades_taken": 139
+          }
+        },
+        "month_bucket": {
+          "bottom_bucket": {
+            "average_edge_at_entry": 0.51187,
+            "average_net_pnl_per_trade": -0.021798,
+            "breakdown": "month_bucket",
+            "bucket": "2026-01",
+            "hit_rate": 0.011236,
+            "no_trades_taken": 0,
+            "pricing_mode": "candle_proxy",
+            "subset": "selected_trades",
+            "total_net_pnl": -1.94,
+            "trades_taken": 89,
+            "yes_trades_taken": 89
+          },
+          "top_bucket": {
+            "average_edge_at_entry": 0.42285,
+            "average_net_pnl_per_trade": 0.011346,
+            "breakdown": "month_bucket",
+            "bucket": "2025-12",
+            "hit_rate": 0.057692,
+            "no_trades_taken": 0,
+            "pricing_mode": "candle_proxy",
+            "subset": "selected_trades",
+            "total_net_pnl": 0.59,
+            "trades_taken": 52,
+            "yes_trades_taken": 52
+          }
+        },
+        "spread_bucket": {
+          "bottom_bucket": {
+            "average_edge_at_entry": 0.477263,
+            "average_net_pnl_per_trade": -0.009701,
+            "breakdown": "spread_bucket",
+            "bucket": "0-2",
+            "hit_rate": 0.022388,
+            "no_trades_taken": 0,
+            "pricing_mode": "candle_proxy",
+            "subset": "selected_trades",
+            "total_net_pnl": -1.3,
+            "trades_taken": 134,
+            "yes_trades_taken": 134
+          },
+          "top_bucket": {
+            "average_edge_at_entry": 0.513052,
+            "average_net_pnl_per_trade": -0.007143,
+            "breakdown": "spread_bucket",
+            "bucket": "2-5",
+            "hit_rate": 0.142857,
+            "no_trades_taken": 0,
+            "pricing_mode": "candle_proxy",
+            "subset": "selected_trades",
+            "total_net_pnl": -0.05,
+            "trades_taken": 7,
+            "yes_trades_taken": 7
+          }
+        }
+      },
+      "output_paths": {
+        "diagnostics_csv": "reports/time_of_day_sensitivity_20260401T000000Z/friction/1100/scenario_c/walkforward_diagnostics_climatology.csv",
+        "rebuilt_trades_csv": "reports/time_of_day_sensitivity_20260401T000000Z/friction/1100/scenario_c/scenario_trades_rebuilt.csv",
+        "results_csv": "reports/time_of_day_sensitivity_20260401T000000Z/friction/1100/scenario_c/walkforward_results_climatology.csv",
+        "summary_json": "reports/time_of_day_sensitivity_20260401T000000Z/friction/1100/scenario_c/walkforward_summary_climatology.json"
+      },
+      "scenario_code": "C",
+      "scenario_label": "Taker Fees + Stricter Edge",
+      "walkforward_summary": {
+        "fold_count": 3,
+        "fold_results_preview": [
+          {
+            "fold_number": 1,
+            "pricing_mode": "candle_proxy",
+            "selected_allow_no": false,
+            "selected_max_price": 100.0,
+            "selected_max_spread": 5.0,
+            "selected_min_edge": 0.05,
+            "selected_min_price": 0.0,
+            "selected_min_samples": 1,
+            "skip_reason": "",
+            "test_average_edge_at_entry": 0.42754,
+            "test_brier_score": 0.158036,
+            "test_end": "2025-12-30",
+            "test_hit_rate": 0.0625,
+            "test_no_trades": 0,
+            "test_rows_evaluated": 180,
+            "test_start": "2025-12-16",
+            "test_total_gross_pnl": 1.28,
+            "test_total_net_pnl": 0.78,
+            "test_trades": 48,
+            "test_yes_trades": 48,
+            "train_end": "2025-11-30",
+            "train_start": "2025-11-01",
+            "validation_average_net_pnl_per_trade": -0.024773,
+            "validation_end": "2025-12-15",
+            "validation_start": "2025-12-01",
+            "validation_total_net_pnl": -1.09,
+            "validation_trades": 44
+          },
+          {
+            "fold_number": 2,
+            "pricing_mode": "candle_proxy",
+            "selected_allow_no": false,
+            "selected_max_price": 100.0,
+            "selected_max_spread": 5.0,
+            "selected_min_edge": 0.05,
+            "selected_min_price": 0.0,
+            "selected_min_samples": 1,
+            "skip_reason": "",
+            "test_average_edge_at_entry": 0.487482,
+            "test_brier_score": 0.182701,
+            "test_end": "2026-01-14",
+            "test_hit_rate": 0.020833,
+            "test_no_trades": 0,
+            "test_rows_evaluated": 180,
+            "test_start": "2025-12-31",
+            "test_total_gross_pnl": 0.05,
+            "test_total_net_pnl": -0.43,
+            "test_trades": 48,
+            "test_yes_trades": 48,
+            "train_end": "2025-12-15",
+            "train_start": "2025-11-01",
+            "validation_average_net_pnl_per_trade": 0.01625,
+            "validation_end": "2025-12-30",
+            "validation_start": "2025-12-16",
+            "validation_total_net_pnl": 0.78,
+            "validation_trades": 48
+          },
+          {
+            "fold_number": 3,
+            "pricing_mode": "candle_proxy",
+            "selected_allow_no": false,
+            "selected_max_price": 100.0,
+            "selected_max_spread": NaN,
+            "selected_min_edge": 0.05,
+            "selected_min_price": 0.0,
+            "selected_min_samples": 1,
+            "skip_reason": "",
+            "test_average_edge_at_entry": 0.524967,
+            "test_brier_score": 0.194699,
+            "test_end": "2026-01-29",
+            "test_hit_rate": 0.0,
+            "test_no_trades": 0,
+            "test_rows_evaluated": 180,
+            "test_start": "2026-01-15",
+            "test_total_gross_pnl": -1.24,
+            "test_total_net_pnl": -1.7,
+            "test_trades": 45,
+            "test_yes_trades": 45,
+            "train_end": "2025-12-30",
+            "train_start": "2025-11-01",
+            "validation_average_net_pnl_per_trade": -0.008958,
+            "validation_end": "2026-01-14",
+            "validation_start": "2025-12-31",
+            "validation_total_net_pnl": -0.43,
+            "validation_trades": 48
+          }
+        ],
+        "pricing_mode": "candle_proxy",
+        "results_by_pricing_mode": {
+          "candle_proxy": {
+            "average_edge_at_entry": 0.47904,
+            "average_gross_pnl_per_trade": 0.000638,
+            "average_net_pnl_per_trade": -0.009574,
+            "brier_score": 0.178479,
+            "folds_attempted": 3,
+            "folds_scored": 3,
+            "hit_rate": 0.028369,
+            "no_trades_taken": 0,
+            "pricing_mode": "candle_proxy",
+            "rows_evaluated": 540,
+            "selected_thresholds_per_fold": [
+              {
+                "fold_number": 1,
+                "selected_allow_no": false,
+                "selected_max_price": 100.0,
+                "selected_max_spread": 5.0,
+                "selected_min_edge": 0.05,
+                "selected_min_price": 0.0,
+                "selected_min_samples": 1
+              },
+              {
+                "fold_number": 2,
+                "selected_allow_no": false,
+                "selected_max_price": 100.0,
+                "selected_max_spread": 5.0,
+                "selected_min_edge": 0.05,
+                "selected_min_price": 0.0,
+                "selected_min_samples": 1
+              },
+              {
+                "fold_number": 3,
+                "selected_allow_no": false,
+                "selected_max_price": 100.0,
+                "selected_max_spread": NaN,
+                "selected_min_edge": 0.05,
+                "selected_min_price": 0.0,
+                "selected_min_samples": 1
+              }
+            ],
+            "total_gross_pnl": 0.09,
+            "total_net_pnl": -1.35,
+            "trades_taken": 141,
+            "yes_trades_taken": 141
+          }
+        },
+        "rows_available": 540,
+        "selection_config": {
+          "min_trades_for_selection": 1,
+          "selection_metric": "total_net_pnl"
+        },
+        "window_config": {
+          "expanding": true,
+          "step_window": 15,
+          "test_window": 15,
+          "train_window": 30,
+          "validation_window": 15,
+          "window_profile": "research_short"
+        }
+      }
+    },
+    {
+      "aggregate": {
+        "average_edge_at_entry": 0.477263,
+        "average_fee_per_trade": 0.010075,
+        "average_gross_edge_at_entry": 0.487338,
+        "average_net_pnl_per_trade": -0.009701,
+        "edge_lost_to_fees_per_trade": 0.010075,
+        "folds_scored": 3,
+        "rows_evaluated": 540,
+        "total_fees": 1.35,
+        "total_net_pnl": -1.3,
+        "trades_taken": 134,
+        "win_rate": 0.022388
+      },
+      "assumption_type": "inferred_from_available_market_data",
+      "breakdowns": {
+        "contract_type": [
+          {
+            "average_fee_per_trade": 0.01,
+            "average_net_pnl_per_trade": -0.027273,
+            "contract_type": "between",
+            "total_net_pnl": -0.3,
+            "trades": 11,
+            "win_rate": 0.0
+          },
+          {
+            "average_fee_per_trade": 0.010147,
+            "average_net_pnl_per_trade": -0.036618,
+            "contract_type": "or_above",
+            "total_net_pnl": -2.49,
+            "trades": 68,
+            "win_rate": 0.0
+          },
+          {
+            "average_fee_per_trade": 0.01,
+            "average_net_pnl_per_trade": 0.027091,
+            "contract_type": "or_below",
+            "total_net_pnl": 1.49,
+            "trades": 55,
+            "win_rate": 0.054545
+          }
+        ],
+        "entry_price_bucket": [
+          {
+            "average_fee_per_trade": 0.01,
+            "average_net_pnl_per_trade": -0.007594,
+            "entry_price_bucket": "0-25",
+            "total_net_pnl": -1.01,
+            "trades": 133,
+            "win_rate": 0.022556
+          },
+          {
+            "average_fee_per_trade": 0.02,
+            "average_net_pnl_per_trade": -0.29,
+            "entry_price_bucket": "25-50",
+            "total_net_pnl": -0.29,
+            "trades": 1,
+            "win_rate": 0.0
+          }
+        ]
+      },
+      "description": "Official taker fees, stricter edge, and a 2-cent max spread filter supported by stored quote data.",
+      "diagnostics_highlights": {
+        "entry_price_bucket": {
+          "bottom_bucket": {
+            "average_edge_at_entry": 0.475955,
+            "average_net_pnl_per_trade": -0.007594,
+            "breakdown": "entry_price_bucket",
+            "bucket": "0-25",
+            "hit_rate": 0.022556,
+            "no_trades_taken": 0,
+            "pricing_mode": "candle_proxy",
+            "subset": "selected_trades",
+            "total_net_pnl": -1.01,
+            "trades_taken": 133,
+            "yes_trades_taken": 133
+          },
+          "top_bucket": {
+            "average_edge_at_entry": 0.651176,
+            "average_net_pnl_per_trade": -0.29,
+            "breakdown": "entry_price_bucket",
+            "bucket": "25-50",
+            "hit_rate": 0.0,
+            "no_trades_taken": 0,
+            "pricing_mode": "candle_proxy",
+            "subset": "selected_trades",
+            "total_net_pnl": -0.29,
+            "trades_taken": 1,
+            "yes_trades_taken": 1
+          }
+        },
+        "month_bucket": {
+          "bottom_bucket": {
+            "average_edge_at_entry": 0.507771,
+            "average_net_pnl_per_trade": -0.019176,
+            "breakdown": "month_bucket",
+            "bucket": "2026-01",
+            "hit_rate": 0.011765,
+            "no_trades_taken": 0,
+            "pricing_mode": "candle_proxy",
+            "subset": "selected_trades",
+            "total_net_pnl": -1.63,
+            "trades_taken": 85,
+            "yes_trades_taken": 85
+          },
+          "top_bucket": {
+            "average_edge_at_entry": 0.424341,
+            "average_net_pnl_per_trade": 0.006735,
+            "breakdown": "month_bucket",
+            "bucket": "2025-12",
+            "hit_rate": 0.040816,
+            "no_trades_taken": 0,
+            "pricing_mode": "candle_proxy",
+            "subset": "selected_trades",
+            "total_net_pnl": 0.33,
+            "trades_taken": 49,
+            "yes_trades_taken": 49
+          }
+        },
+        "spread_bucket": {
+          "bottom_bucket": {
+            "average_edge_at_entry": 0.477263,
+            "average_net_pnl_per_trade": -0.009701,
+            "breakdown": "spread_bucket",
+            "bucket": "0-2",
+            "hit_rate": 0.022388,
+            "no_trades_taken": 0,
+            "pricing_mode": "candle_proxy",
+            "subset": "selected_trades",
+            "total_net_pnl": -1.3,
+            "trades_taken": 134,
+            "yes_trades_taken": 134
+          },
+          "top_bucket": {
+            "average_edge_at_entry": 0.477263,
+            "average_net_pnl_per_trade": -0.009701,
+            "breakdown": "spread_bucket",
+            "bucket": "0-2",
+            "hit_rate": 0.022388,
+            "no_trades_taken": 0,
+            "pricing_mode": "candle_proxy",
+            "subset": "selected_trades",
+            "total_net_pnl": -1.3,
+            "trades_taken": 134,
+            "yes_trades_taken": 134
+          }
+        }
+      },
+      "output_paths": {
+        "diagnostics_csv": "reports/time_of_day_sensitivity_20260401T000000Z/friction/1100/scenario_d/walkforward_diagnostics_climatology.csv",
+        "rebuilt_trades_csv": "reports/time_of_day_sensitivity_20260401T000000Z/friction/1100/scenario_d/scenario_trades_rebuilt.csv",
+        "results_csv": "reports/time_of_day_sensitivity_20260401T000000Z/friction/1100/scenario_d/walkforward_results_climatology.csv",
+        "summary_json": "reports/time_of_day_sensitivity_20260401T000000Z/friction/1100/scenario_d/walkforward_summary_climatology.json"
+      },
+      "scenario_code": "D",
+      "scenario_label": "Taker Fees + Stricter Edge + Tight Spread",
+      "walkforward_summary": {
+        "fold_count": 3,
+        "fold_results_preview": [
+          {
+            "fold_number": 1,
+            "pricing_mode": "candle_proxy",
+            "selected_allow_no": false,
+            "selected_max_price": 100.0,
+            "selected_max_spread": 2.0,
+            "selected_min_edge": 0.05,
+            "selected_min_price": 0.0,
+            "selected_min_samples": 1,
+            "skip_reason": "",
+            "test_average_edge_at_entry": 0.429477,
+            "test_brier_score": 0.158036,
+            "test_end": "2025-12-30",
+            "test_hit_rate": 0.044444,
+            "test_no_trades": 0,
+            "test_rows_evaluated": 180,
+            "test_start": "2025-12-16",
+            "test_total_gross_pnl": 0.97,
+            "test_total_net_pnl": 0.52,
+            "test_trades": 45,
+            "test_yes_trades": 45,
+            "train_end": "2025-11-30",
+            "train_start": "2025-11-01",
+            "validation_average_net_pnl_per_trade": -0.023721,
+            "validation_end": "2025-12-15",
+            "validation_start": "2025-12-01",
+            "validation_total_net_pnl": -1.02,
+            "validation_trades": 43
+          },
+          {
+            "fold_number": 2,
+            "pricing_mode": "candle_proxy",
+            "selected_allow_no": false,
+            "selected_max_price": 100.0,
+            "selected_max_spread": 2.0,
+            "selected_min_edge": 0.05,
+            "selected_min_price": 0.0,
+            "selected_min_samples": 1,
+            "skip_reason": "",
+            "test_average_edge_at_entry": 0.477347,
+            "test_brier_score": 0.182701,
+            "test_end": "2026-01-14",
+            "test_hit_rate": 0.022727,
+            "test_no_trades": 0,
+            "test_rows_evaluated": 180,
+            "test_start": "2025-12-31",
+            "test_total_gross_pnl": 0.32,
+            "test_total_net_pnl": -0.12,
+            "test_trades": 44,
+            "test_yes_trades": 44,
+            "train_end": "2025-12-15",
+            "train_start": "2025-11-01",
+            "validation_average_net_pnl_per_trade": 0.011556,
+            "validation_end": "2025-12-30",
+            "validation_start": "2025-12-16",
+            "validation_total_net_pnl": 0.52,
+            "validation_trades": 45
+          },
+          {
+            "fold_number": 3,
+            "pricing_mode": "candle_proxy",
+            "selected_allow_no": false,
+            "selected_max_price": 100.0,
+            "selected_max_spread": 2.0,
+            "selected_min_edge": 0.05,
+            "selected_min_price": 0.0,
+            "selected_min_samples": 1,
+            "skip_reason": "",
+            "test_average_edge_at_entry": 0.524967,
+            "test_brier_score": 0.194699,
+            "test_end": "2026-01-29",
+            "test_hit_rate": 0.0,
+            "test_no_trades": 0,
+            "test_rows_evaluated": 180,
+            "test_start": "2026-01-15",
+            "test_total_gross_pnl": -1.24,
+            "test_total_net_pnl": -1.7,
+            "test_trades": 45,
+            "test_yes_trades": 45,
+            "train_end": "2025-12-30",
+            "train_start": "2025-11-01",
+            "validation_average_net_pnl_per_trade": -0.002727,
+            "validation_end": "2026-01-14",
+            "validation_start": "2025-12-31",
+            "validation_total_net_pnl": -0.12,
+            "validation_trades": 44
+          }
+        ],
+        "pricing_mode": "candle_proxy",
+        "results_by_pricing_mode": {
+          "candle_proxy": {
+            "average_edge_at_entry": 0.477263,
+            "average_gross_pnl_per_trade": 0.000373,
+            "average_net_pnl_per_trade": -0.009701,
+            "brier_score": 0.178479,
+            "folds_attempted": 3,
+            "folds_scored": 3,
+            "hit_rate": 0.022388,
+            "no_trades_taken": 0,
+            "pricing_mode": "candle_proxy",
+            "rows_evaluated": 540,
+            "selected_thresholds_per_fold": [
+              {
+                "fold_number": 1,
+                "selected_allow_no": false,
+                "selected_max_price": 100.0,
+                "selected_max_spread": 2.0,
+                "selected_min_edge": 0.05,
+                "selected_min_price": 0.0,
+                "selected_min_samples": 1
+              },
+              {
+                "fold_number": 2,
+                "selected_allow_no": false,
+                "selected_max_price": 100.0,
+                "selected_max_spread": 2.0,
+                "selected_min_edge": 0.05,
+                "selected_min_price": 0.0,
+                "selected_min_samples": 1
+              },
+              {
+                "fold_number": 3,
+                "selected_allow_no": false,
+                "selected_max_price": 100.0,
+                "selected_max_spread": 2.0,
+                "selected_min_edge": 0.05,
+                "selected_min_price": 0.0,
+                "selected_min_samples": 1
+              }
+            ],
+            "total_gross_pnl": 0.05,
+            "total_net_pnl": -1.3,
+            "trades_taken": 134,
+            "yes_trades_taken": 134
+          }
+        },
+        "rows_available": 540,
+        "selection_config": {
+          "min_trades_for_selection": 1,
+          "selection_metric": "total_net_pnl"
+        },
+        "window_config": {
+          "expanding": true,
+          "step_window": 15,
+          "test_window": 15,
+          "train_window": 30,
+          "validation_window": 15,
+          "window_profile": "research_short"
+        }
+      }
+    }
+  ],
+  "source_run_dir": "/Users/faisalessa/kalshi-weather-bot/reports/time_of_day_sensitivity_20260401T000000Z/runs/1100",
+  "strict_edge_filtered_trades": [],
+  "walkforward_profile": "research_short",
+  "weather_series_fee_override_basis": "No weather-series-specific fee override fields were found in the staged backtest/scored datasets, and no fee-override logic was found in the repo's executable evaluation path.",
+  "weather_series_fee_override_found": false,
+  "worst_scenario": {
+    "average_edge_at_entry": 0.47904,
+    "average_fee_per_trade": 0.010213,
+    "average_gross_edge_at_entry": 0.489253,
+    "average_net_pnl_per_trade": -0.009574,
+    "edge_lost_to_fees_per_trade": 0.010213,
+    "fee_model": "kalshi_standard_taker",
+    "folds_scored": 3,
+    "max_spread_grid": "none,5.0",
+    "min_edge_grid": "0.0,0.02,0.05",
+    "rows_evaluated": 540,
+    "scenario_code": "B",
+    "scenario_label": "Executable + Standard Taker Fees",
+    "total_fees": 1.44,
+    "total_net_pnl": -1.35,
+    "trades_taken": 141,
+    "win_rate": 0.028369
+  }
+}

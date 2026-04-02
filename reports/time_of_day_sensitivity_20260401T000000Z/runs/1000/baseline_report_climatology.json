@@ -1,0 +1,585 @@
+{
+  "baseline_status": "weak",
+  "baseline_status_criteria": {
+    "primary_mode": "candle_proxy",
+    "promising_requires": {
+      "average_net_pnl_per_trade_positive": true,
+      "folds_scored_at_least": 2,
+      "hit_rate_at_least": 0.5,
+      "total_net_pnl_positive": true,
+      "trades_taken_at_least": 10,
+      "yes_quote_coverage_at_least_for_candle_proxy": 0.8
+    },
+    "weak_if_any": [
+      "no_scored_folds",
+      "no_trades",
+      "non_positive_total_net_pnl"
+    ]
+  },
+  "baseline_status_reason": "candle_proxy walk-forward total net PnL was not positive.",
+  "data_coverage": {
+    "cities_covered": [
+      "chicago",
+      "nyc"
+    ],
+    "date_range": {
+      "end": "2026-01-30",
+      "start": "2025-11-01"
+    },
+    "quote_coverage": {
+      "no_ask": 1.0,
+      "no_bid": 1.0,
+      "yes_ask": 1.0,
+      "yes_bid": 1.0
+    },
+    "rows_scored": 1092,
+    "spread_coverage": {
+      "average_no_spread": 2.184066,
+      "average_yes_spread": 2.184066,
+      "no_spread_available": 1.0,
+      "yes_spread_available": 1.0
+    }
+  },
+  "model_name": "baseline_climatology_v1",
+  "one_shot_evaluation": {
+    "candle_proxy": {
+      "allow_no": false,
+      "average_edge_at_entry": 0.327316,
+      "average_fee_per_trade": 0.0,
+      "average_gross_edge_at_entry": 0.327316,
+      "average_gross_pnl_per_trade": -0.005282,
+      "average_lookback_sample_size": 31.989,
+      "average_net_pnl_per_trade": -0.005282,
+      "average_no_spread": 2.184066,
+      "average_yes_spread": 2.184066,
+      "both_sides_quote_coverage": 1.0,
+      "brier_score": 0.170421,
+      "contracts": 1,
+      "entry_price_bucket_counts": {
+        "0-25": 423,
+        "25-50": 1,
+        "50-75": 2,
+        "75-100": 0
+      },
+      "fee_model": "flat_per_contract",
+      "fee_per_contract": 0.0,
+      "hit_rate": 0.023474,
+      "max_price": 100.0,
+      "max_spread": null,
+      "min_edge": 0.0,
+      "min_price": 0.0,
+      "min_samples": 1,
+      "no_quote_coverage": 1.0,
+      "no_trades_taken": 0,
+      "pricing_mode": "candle_proxy",
+      "quote_source": "decision_candle_ohlc_bounds",
+      "rows_available": 1092,
+      "rows_missing_executable_no_quote": 0,
+      "rows_missing_executable_yes_quote": 0,
+      "rows_scored": 1092,
+      "rows_with_both_sides_executable_quotes": 1092,
+      "rows_with_executable_no_quote": 1092,
+      "rows_with_executable_yes_quote": 1092,
+      "spread_bucket_counts": {
+        "0-2": 388,
+        "10+": 0,
+        "2-5": 31,
+        "5-10": 7
+      },
+      "total_fees": 0.0,
+      "total_gross_pnl": -2.25,
+      "total_net_pnl": -2.25,
+      "trades_taken": 426,
+      "uses_true_quotes": false,
+      "yes_quote_coverage": 1.0,
+      "yes_trades_taken": 426
+    },
+    "comparison": null,
+    "decision_price": null
+  },
+  "pricing_modes_run": [
+    "candle_proxy"
+  ],
+  "run_timestamp_utc": "2026-03-31T22:56:13.316183+00:00",
+  "skipped_steps": [
+    {
+      "reason": "pricing_mode_excludes_decision_price",
+      "status": "skipped",
+      "step": "evaluate_climatology"
+    },
+    {
+      "reason": "requires_both_pricing_modes",
+      "status": "skipped",
+      "step": "compare_climatology_pricing"
+    }
+  ],
+  "staging_validation": {
+    "checked": false,
+    "invalid_datasets": [],
+    "missing_datasets": [],
+    "ready": null,
+    "summary_path": null
+  },
+  "walkforward_evaluation": {
+    "aggregate_by_pricing_mode": {
+      "candle_proxy": {
+        "average_edge_at_entry": 0.47433,
+        "average_gross_pnl_per_trade": -0.001528,
+        "average_net_pnl_per_trade": -0.001528,
+        "brier_score": 0.178479,
+        "folds_attempted": 3,
+        "folds_scored": 3,
+        "hit_rate": 0.034722,
+        "no_trades_taken": 0,
+        "pricing_mode": "candle_proxy",
+        "rows_evaluated": 540,
+        "selected_thresholds_per_fold": [
+          {
+            "fold_number": 1,
+            "selected_allow_no": false,
+            "selected_max_price": 100.0,
+            "selected_max_spread": 5.0,
+            "selected_min_edge": 0.05,
+            "selected_min_price": 0.0,
+            "selected_min_samples": 1
+          },
+          {
+            "fold_number": 2,
+            "selected_allow_no": false,
+            "selected_max_price": 100.0,
+            "selected_max_spread": NaN,
+            "selected_min_edge": 0.05,
+            "selected_min_price": 0.0,
+            "selected_min_samples": 1
+          },
+          {
+            "fold_number": 3,
+            "selected_allow_no": false,
+            "selected_max_price": 100.0,
+            "selected_max_spread": 5.0,
+            "selected_min_edge": 0.05,
+            "selected_min_price": 0.0,
+            "selected_min_samples": 1
+          }
+        ],
+        "total_gross_pnl": -0.22,
+        "total_net_pnl": -0.22,
+        "trades_taken": 144,
+        "yes_trades_taken": 144
+      }
+    },
+    "diagnostic_highlights": {
+      "candle_proxy": {
+        "city_key": {
+          "bottom_bucket": {
+            "average_edge_at_entry": 0.448847,
+            "average_net_pnl_per_trade": -0.001818,
+            "breakdown": "city_key",
+            "bucket": "nyc",
+            "hit_rate": 0.025974,
+            "no_trades_taken": 0,
+            "pricing_mode": "candle_proxy",
+            "subset": "selected_trades",
+            "total_net_pnl": -0.14,
+            "trades_taken": 77,
+            "yes_trades_taken": 77
+          },
+          "top_bucket": {
+            "average_edge_at_entry": 0.503616,
+            "average_net_pnl_per_trade": -0.001194,
+            "breakdown": "city_key",
+            "bucket": "chicago",
+            "hit_rate": 0.044776,
+            "no_trades_taken": 0,
+            "pricing_mode": "candle_proxy",
+            "subset": "selected_trades",
+            "total_net_pnl": -0.08,
+            "trades_taken": 67,
+            "yes_trades_taken": 67
+          }
+        },
+        "entry_price_bucket": {
+          "bottom_bucket": {
+            "average_edge_at_entry": 0.355484,
+            "average_net_pnl_per_trade": -0.58,
+            "breakdown": "entry_price_bucket",
+            "bucket": "50-75",
+            "hit_rate": 0.0,
+            "no_trades_taken": 0,
+            "pricing_mode": "candle_proxy",
+            "subset": "selected_trades",
+            "total_net_pnl": -0.58,
+            "trades_taken": 1,
+            "yes_trades_taken": 1
+          },
+          "top_bucket": {
+            "average_edge_at_entry": 0.475161,
+            "average_net_pnl_per_trade": 0.002517,
+            "breakdown": "entry_price_bucket",
+            "bucket": "0-25",
+            "hit_rate": 0.034965,
+            "no_trades_taken": 0,
+            "pricing_mode": "candle_proxy",
+            "subset": "selected_trades",
+            "total_net_pnl": 0.36,
+            "trades_taken": 143,
+            "yes_trades_taken": 143
+          }
+        },
+        "sample_size_bucket": {
+          "bottom_bucket": {
+            "average_edge_at_entry": 0.47433,
+            "average_net_pnl_per_trade": -0.001528,
+            "breakdown": "sample_size_bucket",
+            "bucket": "26+",
+            "hit_rate": 0.034722,
+            "no_trades_taken": 0,
+            "pricing_mode": "candle_proxy",
+            "subset": "selected_trades",
+            "total_net_pnl": -0.22,
+            "trades_taken": 144,
+            "yes_trades_taken": 144
+          },
+          "top_bucket": {
+            "average_edge_at_entry": 0.47433,
+            "average_net_pnl_per_trade": -0.001528,
+            "breakdown": "sample_size_bucket",
+            "bucket": "26+",
+            "hit_rate": 0.034722,
+            "no_trades_taken": 0,
+            "pricing_mode": "candle_proxy",
+            "subset": "selected_trades",
+            "total_net_pnl": -0.22,
+            "trades_taken": 144,
+            "yes_trades_taken": 144
+          }
+        },
+        "season_bucket": {
+          "bottom_bucket": {
+            "average_edge_at_entry": 0.47433,
+            "average_net_pnl_per_trade": -0.001528,
+            "breakdown": "season_bucket",
+            "bucket": "winter",
+            "hit_rate": 0.034722,
+            "no_trades_taken": 0,
+            "pricing_mode": "candle_proxy",
+            "subset": "selected_trades",
+            "total_net_pnl": -0.22,
+            "trades_taken": 144,
+            "yes_trades_taken": 144
+          },
+          "top_bucket": {
+            "average_edge_at_entry": 0.47433,
+            "average_net_pnl_per_trade": -0.001528,
+            "breakdown": "season_bucket",
+            "bucket": "winter",
+            "hit_rate": 0.034722,
+            "no_trades_taken": 0,
+            "pricing_mode": "candle_proxy",
+            "subset": "selected_trades",
+            "total_net_pnl": -0.22,
+            "trades_taken": 144,
+            "yes_trades_taken": 144
+          }
+        },
+        "spread_bucket": {
+          "bottom_bucket": {
+            "average_edge_at_entry": 0.40264,
+            "average_net_pnl_per_trade": -0.126667,
+            "breakdown": "spread_bucket",
+            "bucket": "2-5",
+            "hit_rate": 0.0,
+            "no_trades_taken": 0,
+            "pricing_mode": "candle_proxy",
+            "subset": "selected_trades",
+            "total_net_pnl": -1.14,
+            "trades_taken": 9,
+            "yes_trades_taken": 9
+          },
+          "top_bucket": {
+            "average_edge_at_entry": 0.480797,
+            "average_net_pnl_per_trade": 0.007612,
+            "breakdown": "spread_bucket",
+            "bucket": "0-2",
+            "hit_rate": 0.037313,
+            "no_trades_taken": 0,
+            "pricing_mode": "candle_proxy",
+            "subset": "selected_trades",
+            "total_net_pnl": 1.02,
+            "trades_taken": 134,
+            "yes_trades_taken": 134
+          }
+        }
+      }
+    },
+    "folds_preview": [
+      {
+        "fold_number": 1,
+        "pricing_mode": "candle_proxy",
+        "selected_allow_no": false,
+        "selected_max_price": 100.0,
+        "selected_max_spread": 5.0,
+        "selected_min_edge": 0.05,
+        "selected_min_price": 0.0,
+        "selected_min_samples": 1,
+        "skip_reason": NaN,
+        "test_average_edge_at_entry": 0.417026,
+        "test_brier_score": 0.158036,
+        "test_end": "2025-12-30",
+        "test_hit_rate": 0.06,
+        "test_no_trades": 0,
+        "test_rows_evaluated": 180,
+        "test_start": "2025-12-16",
+        "test_total_gross_pnl": 0.69,
+        "test_total_net_pnl": 0.69,
+        "test_trades": 50,
+        "test_yes_trades": 50,
+        "train_end": "2025-11-30",
+        "train_start": "2025-11-01",
+        "validation_average_net_pnl_per_trade": -0.025,
+        "validation_end": "2025-12-15",
+        "validation_start": "2025-12-01",
+        "validation_total_net_pnl": -1.15,
+        "validation_trades": 46
+      },
+      {
+        "fold_number": 2,
+        "pricing_mode": "candle_proxy",
+        "selected_allow_no": false,
+        "selected_max_price": 100.0,
+        "selected_max_spread": NaN,
+        "selected_min_edge": 0.05,
+        "selected_min_price": 0.0,
+        "selected_min_samples": 1,
+        "skip_reason": NaN,
+        "test_average_edge_at_entry": 0.482483,
+        "test_brier_score": 0.182701,
+        "test_end": "2026-01-14",
+        "test_hit_rate": 0.020408,
+        "test_no_trades": 0,
+        "test_rows_evaluated": 180,
+        "test_start": "2025-12-31",
+        "test_total_gross_pnl": -0.25,
+        "test_total_net_pnl": -0.25,
+        "test_trades": 49,
+        "test_yes_trades": 49,
+        "train_end": "2025-12-15",
+        "train_start": "2025-11-01",
+        "validation_average_net_pnl_per_trade": 0.0138,
+        "validation_end": "2025-12-30",
+        "validation_start": "2025-12-16",
+        "validation_total_net_pnl": 0.69,
+        "validation_trades": 50
+      },
+      {
+        "fold_number": 3,
+        "pricing_mode": "candle_proxy",
+        "selected_allow_no": false,
+        "selected_max_price": 100.0,
+        "selected_max_spread": 5.0,
+        "selected_min_edge": 0.05,
+        "selected_min_price": 0.0,
+        "selected_min_samples": 1,
+        "skip_reason": NaN,
+        "test_average_edge_at_entry": 0.529124,
+        "test_brier_score": 0.194699,
+        "test_end": "2026-01-29",
+        "test_hit_rate": 0.022222,
+        "test_no_trades": 0,
+        "test_rows_evaluated": 180,
+        "test_start": "2026-01-15",
+        "test_total_gross_pnl": -0.66,
+        "test_total_net_pnl": -0.66,
+        "test_trades": 45,
+        "test_yes_trades": 45,
+        "train_end": "2025-12-30",
+        "train_start": "2025-11-01",
+        "validation_average_net_pnl_per_trade": -0.003125,
+        "validation_end": "2026-01-14",
+        "validation_start": "2025-12-31",
+        "validation_total_net_pnl": -0.15,
+        "validation_trades": 48
+      }
+    ],
+    "summary": {
+      "fold_count": 3,
+      "fold_results_preview": [
+        {
+          "fold_number": 1,
+          "pricing_mode": "candle_proxy",
+          "selected_allow_no": false,
+          "selected_max_price": 100.0,
+          "selected_max_spread": 5.0,
+          "selected_min_edge": 0.05,
+          "selected_min_price": 0.0,
+          "selected_min_samples": 1,
+          "skip_reason": "",
+          "test_average_edge_at_entry": 0.417026,
+          "test_brier_score": 0.158036,
+          "test_end": "2025-12-30",
+          "test_hit_rate": 0.06,
+          "test_no_trades": 0,
+          "test_rows_evaluated": 180,
+          "test_start": "2025-12-16",
+          "test_total_gross_pnl": 0.69,
+          "test_total_net_pnl": 0.69,
+          "test_trades": 50,
+          "test_yes_trades": 50,
+          "train_end": "2025-11-30",
+          "train_start": "2025-11-01",
+          "validation_average_net_pnl_per_trade": -0.025,
+          "validation_end": "2025-12-15",
+          "validation_start": "2025-12-01",
+          "validation_total_net_pnl": -1.15,
+          "validation_trades": 46
+        },
+        {
+          "fold_number": 2,
+          "pricing_mode": "candle_proxy",
+          "selected_allow_no": false,
+          "selected_max_price": 100.0,
+          "selected_max_spread": NaN,
+          "selected_min_edge": 0.05,
+          "selected_min_price": 0.0,
+          "selected_min_samples": 1,
+          "skip_reason": "",
+          "test_average_edge_at_entry": 0.482483,
+          "test_brier_score": 0.182701,
+          "test_end": "2026-01-14",
+          "test_hit_rate": 0.020408,
+          "test_no_trades": 0,
+          "test_rows_evaluated": 180,
+          "test_start": "2025-12-31",
+          "test_total_gross_pnl": -0.25,
+          "test_total_net_pnl": -0.25,
+          "test_trades": 49,
+          "test_yes_trades": 49,
+          "train_end": "2025-12-15",
+          "train_start": "2025-11-01",
+          "validation_average_net_pnl_per_trade": 0.0138,
+          "validation_end": "2025-12-30",
+          "validation_start": "2025-12-16",
+          "validation_total_net_pnl": 0.69,
+          "validation_trades": 50
+        },
+        {
+          "fold_number": 3,
+          "pricing_mode": "candle_proxy",
+          "selected_allow_no": false,
+          "selected_max_price": 100.0,
+          "selected_max_spread": 5.0,
+          "selected_min_edge": 0.05,
+          "selected_min_price": 0.0,
+          "selected_min_samples": 1,
+          "skip_reason": "",
+          "test_average_edge_at_entry": 0.529124,
+          "test_brier_score": 0.194699,
+          "test_end": "2026-01-29",
+          "test_hit_rate": 0.022222,
+          "test_no_trades": 0,
+          "test_rows_evaluated": 180,
+          "test_start": "2026-01-15",
+          "test_total_gross_pnl": -0.66,
+          "test_total_net_pnl": -0.66,
+          "test_trades": 45,
+          "test_yes_trades": 45,
+          "train_end": "2025-12-30",
+          "train_start": "2025-11-01",
+          "validation_average_net_pnl_per_trade": -0.003125,
+          "validation_end": "2026-01-14",
+          "validation_start": "2025-12-31",
+          "validation_total_net_pnl": -0.15,
+          "validation_trades": 48
+        }
+      ],
+      "pricing_mode": "candle_proxy",
+      "results_by_pricing_mode": {
+        "candle_proxy": {
+          "average_edge_at_entry": 0.47433,
+          "average_gross_pnl_per_trade": -0.001528,
+          "average_net_pnl_per_trade": -0.001528,
+          "brier_score": 0.178479,
+          "folds_attempted": 3,
+          "folds_scored": 3,
+          "hit_rate": 0.034722,
+          "no_trades_taken": 0,
+          "pricing_mode": "candle_proxy",
+          "rows_evaluated": 540,
+          "selected_thresholds_per_fold": [
+            {
+              "fold_number": 1,
+              "selected_allow_no": false,
+              "selected_max_price": 100.0,
+              "selected_max_spread": 5.0,
+              "selected_min_edge": 0.05,
+              "selected_min_price": 0.0,
+              "selected_min_samples": 1
+            },
+            {
+              "fold_number": 2,
+              "selected_allow_no": false,
+              "selected_max_price": 100.0,
+              "selected_max_spread": NaN,
+              "selected_min_edge": 0.05,
+              "selected_min_price": 0.0,
+              "selected_min_samples": 1
+            },
+            {
+              "fold_number": 3,
+              "selected_allow_no": false,
+              "selected_max_price": 100.0,
+              "selected_max_spread": 5.0,
+              "selected_min_edge": 0.05,
+              "selected_min_price": 0.0,
+              "selected_min_samples": 1
+            }
+          ],
+          "total_gross_pnl": -0.22,
+          "total_net_pnl": -0.22,
+          "trades_taken": 144,
+          "yes_trades_taken": 144
+        }
+      },
+      "rows_available": 540,
+      "selection_config": {
+        "min_trades_for_selection": 1,
+        "selection_metric": "total_net_pnl"
+      },
+      "window_config": {
+        "expanding": true,
+        "step_window": 15,
+        "test_window": 15,
+        "train_window": 30,
+        "validation_window": 15,
+        "window_profile": "research_short"
+      }
+    },
+    "threshold_stability": {
+      "available": true,
+      "results_by_pricing_mode": {
+        "candle_proxy": {
+          "allow_no_selected_rate": 0.0,
+          "average_selected_min_edge": 0.05,
+          "average_selected_min_samples": 1.0,
+          "folds_scored": 3,
+          "max_spread_active_rate": 1.0,
+          "median_selected_min_edge": 0.05,
+          "median_selected_min_samples": 1.0,
+          "selected_allow_no_frequency": {
+            "False": 3
+          },
+          "selected_max_spread_frequency": {
+            "5.0": 2,
+            "nan": 1
+          },
+          "selected_min_edge_frequency": {
+            "0.05": 3
+          },
+          "selected_min_samples_frequency": {
+            "1": 3
+          }
+        }
+      }
+    }
+  }
+}

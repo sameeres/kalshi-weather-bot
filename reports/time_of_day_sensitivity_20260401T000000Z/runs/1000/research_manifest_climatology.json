@@ -1,0 +1,133 @@
+{
+  "decision_time_local": "10:00",
+  "input_paths": {
+    "candles_path": "",
+    "config_path": "/Users/faisalessa/kalshi-weather-bot/configs/cities.yml",
+    "history_path": "/Users/faisalessa/kalshi-weather-bot/data/staging/weather_daily.parquet",
+    "markets_path": "",
+    "normals_path": "",
+    "weather_path": ""
+  },
+  "model_name": "baseline_climatology_v1",
+  "one_shot_params": {
+    "allow_no": false,
+    "contracts": 1,
+    "fee_per_contract": 0.0,
+    "max_price": 100.0,
+    "max_spread": null,
+    "min_edge": 0.0,
+    "min_price": 0.0,
+    "min_samples": 1
+  },
+  "output_paths": {
+    "backtest_dataset": "reports/time_of_day_sensitivity_20260401T000000Z/runs/1000/backtest_dataset.parquet",
+    "executable_summary": "reports/time_of_day_sensitivity_20260401T000000Z/runs/1000/backtest_summary_climatology_executable.json",
+    "executable_trades": "reports/time_of_day_sensitivity_20260401T000000Z/runs/1000/backtest_trades_climatology_executable.parquet",
+    "manifest": "reports/time_of_day_sensitivity_20260401T000000Z/runs/1000/research_manifest_climatology.json",
+    "report_json": "reports/time_of_day_sensitivity_20260401T000000Z/runs/1000/baseline_report_climatology.json",
+    "report_markdown": "reports/time_of_day_sensitivity_20260401T000000Z/runs/1000/baseline_report_climatology.md",
+    "scored_dataset": "reports/time_of_day_sensitivity_20260401T000000Z/runs/1000/backtest_scored_climatology.parquet",
+    "threshold_stability": "reports/time_of_day_sensitivity_20260401T000000Z/runs/1000/threshold_stability_climatology.json",
+    "walkforward_diagnostics": "reports/time_of_day_sensitivity_20260401T000000Z/runs/1000/walkforward_diagnostics_climatology.csv",
+    "walkforward_results": "reports/time_of_day_sensitivity_20260401T000000Z/runs/1000/walkforward_results_climatology.csv",
+    "walkforward_summary": "reports/time_of_day_sensitivity_20260401T000000Z/runs/1000/walkforward_summary_climatology.json"
+  },
+  "parquet_engine_available": true,
+  "parquet_engine_limitations_affected_execution": false,
+  "pricing_modes_requested": [
+    "candle_proxy"
+  ],
+  "real_local_data_available": true,
+  "row_counts": {
+    "backtest_dataset_rows": 1092,
+    "scored_rows": 1092
+  },
+  "run_directory": "reports/time_of_day_sensitivity_20260401T000000Z/runs/1000",
+  "run_timestamp_utc": "2026-03-31T22:56:13.316183+00:00",
+  "skipped_steps": [
+    {
+      "reason": "pricing_mode_excludes_decision_price",
+      "status": "skipped",
+      "step": "evaluate_climatology"
+    },
+    {
+      "reason": "requires_both_pricing_modes",
+      "status": "skipped",
+      "step": "compare_climatology_pricing"
+    }
+  ],
+  "staging_validation": {
+    "checked": false,
+    "invalid_datasets": [],
+    "missing_datasets": [],
+    "ready": null,
+    "summary_path": null
+  },
+  "steps": [
+    {
+      "rows_written": 1092,
+      "status": "completed",
+      "step": "build_backtest_dataset"
+    },
+    {
+      "rows_scored": 1092,
+      "status": "completed",
+      "step": "score_climatology_baseline"
+    },
+    {
+      "reason": "pricing_mode_excludes_decision_price",
+      "status": "skipped",
+      "step": "evaluate_climatology"
+    },
+    {
+      "status": "completed",
+      "step": "evaluate_climatology_executable",
+      "trades_taken": 426
+    },
+    {
+      "reason": "requires_both_pricing_modes",
+      "status": "skipped",
+      "step": "compare_climatology_pricing"
+    },
+    {
+      "fold_count": 3,
+      "status": "completed",
+      "step": "walkforward_climatology"
+    }
+  ],
+  "threshold_grid": {
+    "allow_no_grid": [
+      false
+    ],
+    "max_price_grid": [
+      100.0
+    ],
+    "max_spread_grid": [
+      null,
+      5.0
+    ],
+    "min_edge_grid": [
+      0.0,
+      0.02,
+      0.05
+    ],
+    "min_price_grid": [
+      0.0
+    ],
+    "min_samples_grid": [
+      1,
+      5
+    ]
+  },
+  "walkforward_config": {
+    "expanding": true,
+    "min_trades_for_selection": 1,
+    "pricing_mode": "candle_proxy",
+    "selection_metric": "total_net_pnl",
+    "step_window": 30,
+    "test_window": 30,
+    "train_window": 60,
+    "validation_window": 30,
+    "window_profile": "research_short"
+  }
+}

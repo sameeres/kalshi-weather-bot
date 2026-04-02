@@ -1,0 +1,48 @@
+{
+  "by_city": [
+    {
+      "city_key": "chicago",
+      "loss_count": 1,
+      "realized_net_pnl_dollars": -0.19,
+      "resolved_trades": 1,
+      "total_paper_trades": 1,
+      "unresolved_trades": 0,
+      "win_count": 0
+    },
+    {
+      "city_key": "nyc",
+      "loss_count": 0,
+      "realized_net_pnl_dollars": 0.79,
+      "resolved_trades": 1,
+      "total_paper_trades": 2,
+      "unresolved_trades": 1,
+      "win_count": 1
+    }
+  ],
+  "daily_dir": "/Users/faisalessa/kalshi-weather-bot/reports/paper_reconciliation_demo_20260401/paper_trading/2026-03-31",
+  "generated_at_utc": "2026-03-31T23:08:56.074086+00:00",
+  "reconciliation_failures_or_ambiguities": [
+    {
+      "market_ticker": "KXHIGHNY-26APR02-T39",
+      "notes": "missing_settlement_weather_observation"
+    }
+  ],
+  "settlement_assumption": "Reconciled from settlement-aligned staged weather observations in data/staging/weather_daily.parquet using the existing market bucket-resolution logic from kwb.marts.backtest_dataset.resolve_bucket.",
+  "source_paths": {
+    "history_path": "/Users/faisalessa/kalshi-weather-bot/reports/paper_reconciliation_demo_20260401/weather_daily.parquet",
+    "paper_trades_path": "/Users/faisalessa/kalshi-weather-bot/reports/paper_reconciliation_demo_20260401/paper_trading/2026-03-31/paper_climatology_trades.parquet"
+  },
+  "totals": {
+    "gross_payout_dollars": 1.0,
+    "loss_count": 1,
+    "realized_net_pnl_dollars": 0.6,
+    "resolved_trades": 2,
+    "total_entry_cost_dollars": 0.38,
+    "total_fees_dollars": 0.02,
+    "total_paper_trades": 3,
+    "unresolved_trades": 1,
+    "win_count": 1,
+    "win_rate_resolved": 0.5
+  },
+  "trade_date": "2026-03-31"
+}

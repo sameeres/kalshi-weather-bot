@@ -1,0 +1,4 @@
+fold_number,pricing_mode,train_start,train_end,validation_start,validation_end,test_start,test_end,selected_min_edge,selected_min_samples,selected_min_price,selected_max_price,selected_allow_no,selected_max_spread,validation_trades,validation_total_net_pnl,validation_average_net_pnl_per_trade,test_rows_evaluated,test_trades,test_yes_trades,test_no_trades,test_hit_rate,test_average_edge_at_entry,test_total_gross_pnl,test_total_net_pnl,test_brier_score,skip_reason
+1,candle_proxy,2025-11-01,2025-11-30,2025-12-01,2025-12-15,2025-12-16,2025-12-30,0.05,1,0.0,100.0,False,,45,-1.03,-0.022889,180,48,48,0,0.0625,0.422399,1.13,0.63,0.158036,
+2,candle_proxy,2025-11-01,2025-12-15,2025-12-16,2025-12-30,2025-12-31,2026-01-14,0.05,1,0.0,100.0,False,5.0,47,1.33,0.028298,180,50,50,0,0.02,0.471689,0.02,-0.48,0.182701,
+3,candle_proxy,2025-11-01,2025-12-30,2025-12-31,2026-01-14,2026-01-15,2026-01-29,0.05,1,0.0,100.0,False,,50,-0.48,-0.0096,180,45,45,0,0.0,0.525634,-1.21,-1.67,0.194699,

@@ -1,0 +1,5 @@
+scenario_code,scenario_label,fee_model,min_edge_grid,max_spread_grid,folds_scored,rows_evaluated,trades_taken,win_rate,total_net_pnl,average_net_pnl_per_trade,average_edge_at_entry,average_gross_edge_at_entry,average_fee_per_trade,total_fees,edge_lost_to_fees_per_trade
+A,Executable No Fees,flat_per_contract,"0.0,0.02,0.05","none,5.0",3,540,157,0.025478,-0.49,-0.003121,0.444321,0.444321,0.0,0.0,0.0
+B,Executable + Standard Taker Fees,kalshi_standard_taker,"0.0,0.02,0.05","none,5.0",3,540,143,0.027972,-1.52,-0.010629,0.47212,0.48233,0.01021,1.46,0.01021
+C,Taker Fees + Stricter Edge,kalshi_standard_taker,0.05,"none,5.0",3,540,143,0.027972,-1.52,-0.010629,0.47212,0.48233,0.01021,1.46,0.01021
+D,Taker Fees + Stricter Edge + Tight Spread,kalshi_standard_taker,0.05,2.0,3,540,134,0.022388,-1.04,-0.007761,0.474076,0.484151,0.010075,1.35,0.010075
