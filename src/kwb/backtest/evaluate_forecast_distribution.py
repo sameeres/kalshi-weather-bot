@@ -10,8 +10,10 @@ import pandas as pd
 from kwb.backtest.evaluate_climatology import _compute_trade_pnl, select_trade
 from kwb.models.baseline_climatology import DEFAULT_SCORED_FILENAME as DEFAULT_CLIMATOLOGY_SCORED_FILENAME
 from kwb.models.forecast_distribution import DEFAULT_SCORED_FILENAME as DEFAULT_FORECAST_SCORED_FILENAME
-from kwb.settings import MARTS_DIR
+from kwb.settings import MARTS_DIR, STAGING_DIR
 from kwb.utils.logging import get_logger
+
+DEFAULT_CANDLES_PATH = STAGING_DIR / "kalshi_candles.parquet"
 
 logger = get_logger(__name__)
 
@@ -32,6 +34,7 @@ def evaluate_forecast_distribution_signals(
     climatology_scored_path: Path | None = None,
     forecast_scored_path: Path | None = None,
     output_dir: Path | None = None,
+    candles_path: Path | None = None,
     min_edge: float = 0.05,
     min_samples: int = 30,
     min_price: float = 0.0,
@@ -41,6 +44,16 @@ def evaluate_forecast_distribution_signals(
     allow_no: bool = False,
     fold_count: int = 3,
 ) -> tuple[Path, Path, Path, dict[str, Any]]:
+    """Evaluate forecast distribution signals against climatology.
+
+    When candles_path is provided, PnL for the forecast strategies is computed
+    using the Kalshi candle price at the NWS snapshot timestamp (snapshot-time
+    price) rather than the fixed daily decision_ts price. This is the correct
+    comparison: the model's signal at the moment the NWS snapshot was issued.
+
+    When candles_path is None, falls back to the 10 AM decision_ts price
+    (the original behaviour, preserved for backward compatibility).
+    """
     climatology_scored_path = climatology_scored_path or DEFAULT_CLIMATOLOGY_SCORED_PATH
     forecast_scored_path = forecast_scored_path or DEFAULT_FORECAST_SCORED_PATH
     output_dir = output_dir or MARTS_DIR
@@ -49,8 +62,16 @@ def evaluate_forecast_distribution_signals(
     climatology_df = pd.read_parquet(climatology_scored_path).copy()
     forecast_df = pd.read_parquet(forecast_scored_path).copy()
     joined_df = _build_joined_frame(climatology_df=climatology_df, forecast_df=forecast_df)
+
+    candle_index = _build_candle_index(candles_path) if candles_path is not None and candles_path.exists() else {}
+    if candle_index:
+        logger.info("Snapshot-time price lookup enabled: %d candle entries loaded", len(candle_index))
+    else:
+        logger.info("Snapshot-time price lookup disabled: using fixed decision_ts price")
+
     trades_df, summary = _evaluate_joined_frame(
         joined_df=joined_df,
+        candle_index=candle_index,
         min_edge=min_edge,
         min_samples=min_samples,
         min_price=min_price,
@@ -85,6 +106,7 @@ def _build_joined_frame(climatology_df: pd.DataFrame, forecast_df: pd.DataFrame)
 
 def _evaluate_joined_frame(
     joined_df: pd.DataFrame,
+    candle_index: dict[tuple[str, str], float],
     min_edge: float,
     min_samples: int,
     min_price: float,
@@ -98,6 +120,15 @@ def _evaluate_joined_frame(
     rows: list[dict[str, Any]] = []
 
     for row in joined_df.to_dict("records"):
+        # Snapshot-time price: if candle_index is available and the forecast scored
+        # output includes forecast_snapshot_ts, look up the Kalshi price at that
+        # timestamp instead of the fixed 10 AM decision_ts price.
+        snapshot_ts_str = str(row.get("forecast_snapshot_ts") or "")
+        snapshot_hour = _snapshot_ts_to_hour_key(snapshot_ts_str)
+        snapshot_price = candle_index.get((str(row["market_ticker"]), snapshot_hour)) if snapshot_hour else None
+        forecast_fill_price = snapshot_price if snapshot_price is not None else float(row["decision_price_forecast"])
+        price_source = "snapshot_ts_candle" if snapshot_price is not None else "decision_ts_candle"
+
         climatology_selection = select_trade(
             row={
                 "lookback_sample_size": row["lookback_sample_size_climatology"],
@@ -114,7 +145,7 @@ def _evaluate_joined_frame(
         forecast_selection = select_trade(
             row={
                 "lookback_sample_size": row["lookback_sample_size_forecast"],
-                "decision_price": row["decision_price_forecast"],
+                "decision_price": forecast_fill_price,
                 "edge_yes": row["edge_yes_forecast"],
                 "model_prob_no": row["model_prob_no_forecast"],
             },
@@ -135,9 +166,10 @@ def _evaluate_joined_frame(
             selection = selections[strategy_name]
             if selection is None:
                 continue
+            fill_price = forecast_fill_price if strategy_name != "climatology_only" else float(row["decision_price_climatology"])
             gross_pnl, net_pnl = _compute_trade_pnl(
                 chosen_side=str(selection["chosen_side"]),
-                decision_price=float(row["decision_price_forecast"]),
+                decision_price=fill_price,
                 resolved_yes=bool(row["resolved_yes_climatology"]),
                 contracts=contracts,
                 fee_per_contract=fee_per_contract,
@@ -149,6 +181,8 @@ def _evaluate_joined_frame(
                     "market_ticker": row["market_ticker"],
                     "event_date": row["event_date"],
                     "decision_ts": row["decision_ts"],
+                    "forecast_snapshot_ts": snapshot_ts_str or None,
+                    "fill_price_source": price_source if strategy_name != "climatology_only" else "decision_ts_candle",
                     "chosen_side": selection["chosen_side"],
                     "entry_price": selection["entry_price"],
                     "edge_at_entry": selection["edge_at_entry"],
@@ -292,3 +326,38 @@ def _render_report(summary: dict[str, Any]) -> str:
             ]
         )
     return "\n".join(lines)
+
+
+def _build_candle_index(candles_path: Path) -> dict[tuple[str, str], float]:
+    """Build a lookup of {(market_ticker, hour_key): close_price} from the candle file.
+
+    hour_key is the candle_ts truncated to the hour as an ISO string
+    (e.g. '2026-01-10T07:00:00+00:00'). Used to find the candle price closest
+    to a given NWS snapshot timestamp.
+    """
+    try:
+        df = pd.read_parquet(candles_path)
+    except Exception as exc:
+        logger.warning("Could not load candles from %s: %s", candles_path, exc)
+        return {}
+
+    if df.empty:
+        return {}
+
+    df["candle_ts"] = pd.to_datetime(df["candle_ts"], utc=True, errors="coerce")
+    df = df.dropna(subset=["candle_ts", "market_ticker", "close"])
+    index: dict[tuple[str, str], float] = {}
+    for row in df.to_dict("records"):
+        hour_key = row["candle_ts"].strftime("%Y-%m-%dT%H:00:00+00:00")
+        index[(str(row["market_ticker"]), hour_key)] = float(row["close"])
+    return index
+
+
+def _snapshot_ts_to_hour_key(snapshot_ts_str: str) -> str | None:
+    """Convert a snapshot_ts ISO string to the hourly candle bucket key."""
+    if not snapshot_ts_str:
+        return None
+    ts = pd.to_datetime(snapshot_ts_str, utc=True, errors="coerce")
+    if pd.isna(ts):
+        return None
+    return ts.strftime("%Y-%m-%dT%H:00:00+00:00")

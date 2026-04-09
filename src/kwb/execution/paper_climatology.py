@@ -21,6 +21,9 @@ from kwb.settings import CONFIG_DIR, MARTS_DIR, STAGING_DIR
 from kwb.utils.io import read_yaml
 from kwb.utils.logging import get_logger
 
+DEFAULT_NWS_SNAPSHOTS_PATH = STAGING_DIR / "nws_forecast_hourly_snapshots.parquet"
+NWS_FORECAST_BUFFER_F_DEFAULT = 3.0
+
 logger = get_logger(__name__)
 
 DEFAULT_PAPER_CONFIG_PATH = CONFIG_DIR / "paper_trading.yml"
@@ -111,6 +114,7 @@ EVALUATION_COLUMNS = [
     "day_window",
     "min_lookback_samples",
     "model_name",
+    "nws_forecast_max_temp_f",
 ]
 
 
@@ -124,6 +128,7 @@ def run_paper_climatology_monitor(
     history_path: Path | None = DEFAULT_HISTORY_PATH,
     output_root: Path | None = None,
     microstructure_dir: Path | None = None,
+    nws_snapshots_path: Path | None = None,
     iterations: int | None = None,
     poll_interval_seconds: float | None = None,
     status: str | None = None,
@@ -166,6 +171,8 @@ def run_paper_climatology_monitor(
         for city_key, frame in history_df.groupby("city_key", sort=False)
     }
 
+    nws_index = _load_nws_forecast_index(nws_snapshots_path or DEFAULT_NWS_SNAPSHOTS_PATH)
+
     microstructure_dir = microstructure_dir or STAGING_DIR
     snapshots_path, levels_path, capture_summary_path, capture_summary = capture_kalshi_microstructure_for_enabled_cities(
         config_path=config_path,
@@ -192,10 +199,13 @@ def run_paper_climatology_monitor(
         raise PaperClimatologyMonitorError("Microstructure capture completed, but no session snapshots were found.")
 
     evaluation_ts = datetime.now(timezone.utc).isoformat()
+    nws_buffer_f = float(config.get("nws_forecast_buffer_f", NWS_FORECAST_BUFFER_F_DEFAULT))
     evaluation_rows = [
         _evaluate_snapshot_row(
             row=row,
             grouped_history=grouped_history,
+            nws_index=nws_index,
+            nws_buffer_f=nws_buffer_f,
             strategy_name=strategy_name,
             evaluation_ts=evaluation_ts,
             gate=gate,
@@ -275,6 +285,7 @@ def _load_monitor_config(path: Path) -> dict[str, Any]:
     return {
         "strategy_name": monitor.get("strategy_name", "climatology_or_below_yes_cheap_v1"),
         "paper_only": bool(monitor.get("paper_only", True)),
+        "nws_forecast_buffer_f": float(monitor.get("nws_forecast_buffer_f", NWS_FORECAST_BUFFER_F_DEFAULT)),
         "gate": {
             "contract_type": str(monitor["gate"].get("contract_type", "or_below")),
             "chosen_side": _normalize_side_value(monitor["gate"].get("chosen_side", "yes")),
@@ -299,6 +310,59 @@ def _load_monitor_config(path: Path) -> dict[str, Any]:
     }
 
 
+def _load_nws_forecast_index(snapshots_path: Path) -> dict[tuple[str, str], float]:
+    """Build a lookup of {(city_key, period_date_local): forecasted_max_temp_f}.
+
+    Uses the most recent NWS snapshot available per city. Returns an empty dict
+    if the snapshots file does not exist or is empty — callers degrade gracefully.
+    """
+    if not snapshots_path.exists():
+        logger.debug("NWS forecast snapshots not found at %s — skipping NWS gate", snapshots_path)
+        return {}
+
+    try:
+        df = pd.read_parquet(snapshots_path)
+    except Exception as exc:
+        logger.warning("Could not load NWS forecast snapshots from %s: %s", snapshots_path, exc)
+        return {}
+
+    if df.empty or "snapshot_ts" not in df.columns:
+        return {}
+
+    df["snapshot_ts"] = pd.to_datetime(df["snapshot_ts"], utc=True, errors="coerce")
+    df = df.dropna(subset=["snapshot_ts", "city_key", "period_date_local", "temperature_f"])
+
+    # Keep only daytime hours (is_daytime=True) to estimate the daily max,
+    # falling back to all hours if the column is absent.
+    if "is_daytime" in df.columns:
+        daytime = df[df["is_daytime"].astype(bool)]
+        if not daytime.empty:
+            df = daytime
+
+    # For each city, use only the most recent snapshot timestamp.
+    latest_ts_per_city = df.groupby("city_key")["snapshot_ts"].max()
+    filtered_rows = []
+    for city_key, latest_ts in latest_ts_per_city.items():
+        city_rows = df[(df["city_key"] == city_key) & (df["snapshot_ts"] == latest_ts)]
+        filtered_rows.append(city_rows)
+
+    if not filtered_rows:
+        return {}
+
+    latest_df = pd.concat(filtered_rows, ignore_index=True)
+    # Max temp per (city, date) from the latest snapshot.
+    max_temps = (
+        latest_df.groupby(["city_key", "period_date_local"])["temperature_f"].max().reset_index()
+    )
+
+    index: dict[tuple[str, str], float] = {}
+    for row in max_temps.to_dict("records"):
+        index[(str(row["city_key"]), str(row["period_date_local"]))] = float(row["temperature_f"])
+
+    logger.debug("Loaded NWS forecast index: %d city-date entries", len(index))
+    return index
+
+
 def _validate_history_frame(history_df: pd.DataFrame, history_path: Path) -> None:
     required = {"city_key", "obs_date", "tmax_f"}
     missing = sorted(required - set(history_df.columns))
@@ -311,6 +375,8 @@ def _validate_history_frame(history_df: pd.DataFrame, history_path: Path) -> Non
 def _evaluate_snapshot_row(
     row: dict[str, Any],
     grouped_history: dict[str, pd.DataFrame],
+    nws_index: dict[tuple[str, str], float],
+    nws_buffer_f: float,
     strategy_name: str,
     evaluation_ts: str,
     gate: dict[str, Any],
@@ -347,6 +413,21 @@ def _evaluate_snapshot_row(
         reasons.append("missing_yes_ask")
     if event_date is None:
         reasons.append("missing_event_date")
+
+    # NWS forecast gate: for or_below YES trades, block if forecast max temp is above
+    # cap_strike + buffer_f (forecast says it'll be too warm to resolve YES).
+    cap_strike = _optional_float(row.get("cap_strike"))
+    nws_forecast_max_temp_f: float | None = None
+    if (
+        contract_type == "or_below"
+        and chosen_side == "yes"
+        and event_date is not None
+        and cap_strike is not None
+        and nws_index
+    ):
+        nws_forecast_max_temp_f = nws_index.get((str(city_key), str(event_date)))
+        if nws_forecast_max_temp_f is not None and nws_forecast_max_temp_f > cap_strike + nws_buffer_f:
+            reasons.append("nws_forecast_too_warm")
 
     lookback_sample_size = None
     fair_yes = None
@@ -453,6 +534,7 @@ def _evaluate_snapshot_row(
         "day_window": int(decision["day_window"]),
         "min_lookback_samples": int(decision["min_lookback_samples"]),
         "model_name": DEFAULT_MODEL_NAME,
+        "nws_forecast_max_temp_f": nws_forecast_max_temp_f,
     }
 
 
