@@ -1,7 +1,7 @@
 # Station Mapping Recommendations
 
-- Checked at (UTC): `2026-03-31T23:09:10.707816+00:00`
-- Config path: `/private/var/folders/vc/4dq_n3k97dngm5x8ml1jzzsr0000gn/T/pytest-of-faisalessa/pytest-3/test_station_recommend_cli_can0/cities.yml`
+- Checked at (UTC): `2026-04-09T10:10:42.926505+00:00`
+- Config path: `/private/var/folders/vc/4dq_n3k97dngm5x8ml1jzzsr0000gn/T/pytest-of-faisalessa/pytest-1/test_station_recommend_cli_can0/cities.yml`
 - Min confidence for auto-selection: `0.85`
 
 ## nyc

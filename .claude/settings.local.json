@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(office-hours)",
+      "Skill(office-hours:*)",
+      "Bash(python3 -c ':*)",
+      "Bash(curl -s \"https://previous-runs-api.open-meteo.com/v1/previous-runs?latitude=40.71&longitude=-74.01&start_date=2026-01-06&end_date=2026-01-06&daily=temperature_2m_max&forecast_days=1&timezone=America%2FNew_York&temperature_unit=fahrenheit\")",
+      "Bash(python3 -m json.tool)",
+      "Bash(curl -s \"https://api.open-meteo.com/v1/forecast?latitude=40.71&longitude=-74.01&daily=temperature_2m_max&past_days=90&forecast_days=1&timezone=America%2FNew_York&temperature_unit=fahrenheit\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('dates:', d['daily']['time'][:5], '...', d['daily']['time'][-5:]\\); print\\('max_temp first 5:', d['daily']['temperature_2m_max'][:5]\\)\")",
+      "Bash(curl -s \"https://historical-forecast-api.open-meteo.com/v1/forecast?latitude=40.71&longitude=-74.01&start_date=2026-01-06&end_date=2026-01-06&daily=temperature_2m_max&timezone=America%2FNew_York&temperature_unit=fahrenheit\")",
+      "Bash(curl -s \"https://previous-runs-api.open-meteo.com/v1/previous-runs?latitude=40.71&longitude=-74.01&start_date=2026-01-06&end_date=2026-01-06&daily=temperature_2m_max&forecast_days=3&timezone=America%2FNew_York&temperature_unit=fahrenheit&models=gfs_seamless\")",
+      "Bash(curl -s \"https://previous-runs-api.open-meteo.com/v1/previous-runs?latitude=40.71&longitude=-74.01&start_date=2026-01-05&end_date=2026-01-05&daily=temperature_2m_max&forecast_days=1&timezone=America%2FNew_York\")",
+      "Bash(curl -v \"https://previous-runs-api.open-meteo.com/\")",
+      "Bash(curl -s \"https://archive-api.open-meteo.com/v1/archive?latitude=40.71&longitude=-74.01&start_date=2026-01-06&end_date=2026-01-06&daily=temperature_2m_max&timezone=America%2FNew_York&temperature_unit=fahrenheit\")",
+      "Bash(curl -s \"https://previous-runs-api.open-meteo.com/v1/forecast?latitude=40.71&longitude=-74.01&start_date=2026-01-06&end_date=2026-01-06&daily=temperature_2m_max&forecast_days=1&timezone=America%2FNew_York&temperature_unit=fahrenheit\")",
+      "Bash(curl -s \"https://previous-runs-api.open-meteo.com/v1/forecast?latitude=40.71&longitude=-74.01&start_date=2026-01-06&end_date=2026-01-06&daily=temperature_2m_max&forecast_days=5&timezone=America%2FNew_York&temperature_unit=fahrenheit\")",
+      "Bash(curl -s \"https://previous-runs-api.open-meteo.com/v1/forecast?latitude=40.71&longitude=-74.01&past_days=92&forecast_days=1&daily=temperature_2m_max&timezone=America%2FNew_York&temperature_unit=fahrenheit\")",
+      "Bash(curl -s \"https://previous-runs-api.open-meteo.com/v1/forecast?latitude=40.71&longitude=-74.01&past_days=92&forecast_days=5&daily=temperature_2m_max&timezone=America%2FNew_York&temperature_unit=fahrenheit\")",
+      "Bash(curl -s \"https://previous-runs-api.open-meteo.com/v1/forecast?latitude=40.71&longitude=-74.01&past_days=365&forecast_days=1&daily=temperature_2m_max&timezone=America%2FNew_York&temperature_unit=fahrenheit\")",
+      "Bash(python3)"
+    ]
+  }
+}
