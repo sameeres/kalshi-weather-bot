@@ -107,6 +107,7 @@ EVALUATION_COLUMNS = [
     "gross_edge_yes",
     "net_edge_yes",
     "estimated_fees_dollars",
+    "gate_min_entry_price_cents",
     "gate_max_entry_price_cents",
     "decision_min_net_edge",
     "decision_max_spread_cents",
@@ -115,6 +116,9 @@ EVALUATION_COLUMNS = [
     "min_lookback_samples",
     "model_name",
     "nws_forecast_max_temp_f",
+    "order_id",
+    "order_status",
+    "order_filled_count",
 ]
 
 
@@ -221,6 +225,15 @@ def run_paper_climatology_monitor(
 
     output_root = output_root or DEFAULT_PAPER_ROOT_DIR
     session_date = str(pd.to_datetime(snapshot_ts_values[0], utc=True).date())
+
+    # Live order execution: place real orders when live_trading is enabled.
+    if config.get("live_trading") and not trades_df.empty:
+        trades_df = _execute_live_orders(
+            trades_df=trades_df,
+            daily_trades_path=output_root / session_date / DEFAULT_TRADES_FILENAME,
+            execution=dict(config["execution"]),
+        )
+        evaluations_df = _merge_order_fields_into_evaluations(evaluations_df, trades_df)
     daily_dir = output_root / session_date
     daily_dir.mkdir(parents=True, exist_ok=True)
 
@@ -282,14 +295,22 @@ def _load_monitor_config(path: Path) -> dict[str, Any]:
     missing = sorted(required_sections - set(monitor))
     if missing:
         raise PaperClimatologyMonitorError(f"Paper monitor config is missing sections: {', '.join(missing)}")
+    execution_cfg = monitor.get("execution") or {}
     return {
         "strategy_name": monitor.get("strategy_name", "climatology_or_below_yes_cheap_v1"),
         "paper_only": bool(monitor.get("paper_only", True)),
+        "live_trading": bool(monitor.get("live_trading", False)),
         "nws_forecast_buffer_f": float(monitor.get("nws_forecast_buffer_f", NWS_FORECAST_BUFFER_F_DEFAULT)),
         "gate": {
             "contract_type": str(monitor["gate"].get("contract_type", "or_below")),
             "chosen_side": _normalize_side_value(monitor["gate"].get("chosen_side", "yes")),
+            "min_entry_price_cents": float(monitor["gate"].get("min_entry_price_cents", 0.0)),
             "max_entry_price_cents": float(monitor["gate"].get("max_entry_price_cents", 25.0)),
+        },
+        "execution": {
+            "max_trade_dollars": float(execution_cfg.get("max_trade_dollars", 5.0)),
+            "max_daily_trades": int(execution_cfg.get("max_daily_trades", 3)),
+            "max_daily_exposure_dollars": float(execution_cfg.get("max_daily_exposure_dollars", 15.0)),
         },
         "decision": {
             "day_window": int(monitor["decision"].get("day_window", 1)),
@@ -329,7 +350,7 @@ def _load_nws_forecast_index(snapshots_path: Path) -> dict[tuple[str, str], floa
     if df.empty or "snapshot_ts" not in df.columns:
         return {}
 
-    df["snapshot_ts"] = pd.to_datetime(df["snapshot_ts"], utc=True, errors="coerce")
+    df["snapshot_ts"] = pd.to_datetime(df["snapshot_ts"], utc=True, format="ISO8601")
     df = df.dropna(subset=["snapshot_ts", "city_key", "period_date_local", "temperature_f"])
 
     # Keep only daytime hours (is_daytime=True) to estimate the daily max,
@@ -472,6 +493,8 @@ def _evaluate_snapshot_row(
         )
         gross_edge_yes = round(float(fair_yes) - (best_yes_ask / 100.0), 6)
         net_edge_yes = round(gross_edge_yes - (estimated_fees_dollars / int(decision["contracts"])), 6)
+        if best_yes_ask < float(gate["min_entry_price_cents"]):
+            reasons.append("entry_price_below_gate")
         if best_yes_ask > float(gate["max_entry_price_cents"]):
             reasons.append("entry_price_above_gate")
         if yes_spread is not None and yes_spread > float(decision["max_spread_cents"]):
@@ -527,6 +550,7 @@ def _evaluate_snapshot_row(
         "gross_edge_yes": gross_edge_yes,
         "net_edge_yes": net_edge_yes,
         "estimated_fees_dollars": estimated_fees_dollars,
+        "gate_min_entry_price_cents": float(gate["min_entry_price_cents"]),
         "gate_max_entry_price_cents": float(gate["max_entry_price_cents"]),
         "decision_min_net_edge": float(decision["min_net_edge"]),
         "decision_max_spread_cents": float(decision["max_spread_cents"]),
@@ -535,7 +559,186 @@ def _evaluate_snapshot_row(
         "min_lookback_samples": int(decision["min_lookback_samples"]),
         "model_name": DEFAULT_MODEL_NAME,
         "nws_forecast_max_temp_f": nws_forecast_max_temp_f,
+        "order_id": None,
+        "order_status": None,
+        "order_filled_count": None,
     }
+
+
+def _read_daily_order_stats(daily_trades_path: Path, max_trade_dollars: float) -> tuple[int, float, set[str]]:
+    """Return (orders_placed, exposure_dollars, already_ordered_tickers) from today's trades file."""
+    if not daily_trades_path.exists():
+        return 0, 0.0, set()
+    try:
+        existing = pd.read_parquet(daily_trades_path)
+    except Exception as exc:
+        logger.warning("Could not read daily trades for limit check: %s", exc)
+        return 0, 0.0, set()
+
+    if existing.empty or "order_id" not in existing.columns:
+        return 0, 0.0, set()
+
+    live = existing.loc[
+        existing["order_id"].notna() & (existing["order_id"].astype(str).str.strip() != "")
+    ].drop_duplicates(subset=["order_id"])
+
+    orders_placed = len(live)
+    # Conservative: assume each order spent max_trade_dollars (we may not have fill data yet).
+    exposure_dollars = orders_placed * max_trade_dollars
+    already_ordered = set(live["market_ticker"].astype(str)) if "market_ticker" in live.columns else set()
+    return orders_placed, exposure_dollars, already_ordered
+
+
+def _execute_live_orders(
+    trades_df: pd.DataFrame,
+    daily_trades_path: Path,
+    execution: dict[str, Any],
+) -> pd.DataFrame:
+    """Place live Kalshi orders subject to per-day risk limits.
+
+    Guards (all checked before each order):
+      max_daily_trades          — hard cap on number of orders placed today
+      max_daily_exposure_dollars — hard cap on total dollars committed today
+      one order per market_ticker per day (deduplication)
+
+    Contracts per order are sized dynamically:
+      contracts = floor(max_trade_dollars / (entry_price_cents / 100)), minimum 1
+    """
+    from kwb.clients.kalshi_auth import KalshiAuthClient, KalshiAuthError
+
+    max_trade_dollars = float(execution.get("max_trade_dollars", 5.0))
+    max_daily_trades = int(execution.get("max_daily_trades", 3))
+    max_daily_exposure = float(execution.get("max_daily_exposure_dollars", 15.0))
+
+    trades_df = trades_df.copy()
+    for col in ("order_id", "order_status", "order_filled_count"):
+        if col not in trades_df.columns:
+            trades_df[col] = None
+
+    orders_placed, exposure_dollars, already_ordered = _read_daily_order_stats(
+        daily_trades_path, max_trade_dollars
+    )
+    logger.info(
+        "Daily order stats at session start: placed=%d exposure=$%.2f "
+        "limit_trades=%d limit_exposure=$%.2f",
+        orders_placed, exposure_dollars, max_daily_trades, max_daily_exposure,
+    )
+
+    try:
+        auth_client = KalshiAuthClient()
+    except KalshiAuthError as exc:
+        logger.error("Live trading enabled but auth client could not be initialized: %s", exc)
+        return trades_df
+
+    # Deduplicate: one order per market_ticker, best edge row wins.
+    candidates = (
+        trades_df.sort_values("net_edge_yes", ascending=False)
+        .drop_duplicates(subset=["market_ticker"])
+        .to_dict("records")
+    )
+
+    for row in candidates:
+        ticker = str(row.get("market_ticker") or "")
+        if not ticker or ticker in already_ordered:
+            continue
+
+        # --- daily limits check ---
+        if orders_placed >= max_daily_trades:
+            logger.warning(
+                "Daily trade limit reached (%d/%d). Skipping %s and all remaining candidates.",
+                orders_placed, max_daily_trades, ticker,
+            )
+            break
+        if exposure_dollars >= max_daily_exposure:
+            logger.warning(
+                "Daily exposure limit reached ($%.2f/$%.2f). Skipping %s and all remaining candidates.",
+                exposure_dollars, max_daily_exposure, ticker,
+            )
+            break
+
+        entry_price_cents = row.get("entry_price_cents")
+        if entry_price_cents is None:
+            logger.warning("Skipping live order for %s: missing entry_price_cents", ticker)
+            continue
+
+        price_cents = int(round(float(entry_price_cents)))
+        # Dynamic sizing: buy as many whole contracts as max_trade_dollars allows.
+        contracts = max(1, int(max_trade_dollars / (price_cents / 100.0)))
+        trade_cost = contracts * price_cents / 100.0
+        side = str(row.get("chosen_side") or "yes").lower()
+
+        logger.info(
+            "Placing live order: ticker=%s side=%s price=%d¢ contracts=%d cost=$%.2f "
+            "(daily: %d/%d trades, $%.2f/$%.2f exposure)",
+            ticker, side, price_cents, contracts, trade_cost,
+            orders_placed, max_daily_trades, exposure_dollars, max_daily_exposure,
+        )
+
+        try:
+            result = auth_client.create_order(
+                market_ticker=ticker,
+                side=side,
+                price_cents=price_cents,
+                count=contracts,
+            )
+            order = result.get("order", result)
+            order_id = str(order.get("order_id") or "")
+            order_status = str(order.get("status") or "")
+            order_filled_count = order.get("filled_count")
+            logger.info(
+                "Order confirmed: order_id=%s status=%s filled=%s",
+                order_id, order_status, order_filled_count,
+            )
+            orders_placed += 1
+            exposure_dollars += trade_cost
+            already_ordered.add(ticker)
+        except Exception as exc:
+            logger.error("Live order failed for %s: %s", ticker, exc)
+            order_id = ""
+            order_status = f"error: {exc}"
+            order_filled_count = 0
+
+        # Stamp order fields onto all rows for this ticker in trades_df.
+        mask = trades_df["market_ticker"].astype(str) == ticker
+        trades_df.loc[mask, "order_id"] = order_id
+        trades_df.loc[mask, "order_status"] = order_status
+        trades_df.loc[mask, "order_filled_count"] = order_filled_count
+
+    return trades_df
+
+
+def _merge_order_fields_into_evaluations(
+    evaluations_df: pd.DataFrame,
+    trades_df: pd.DataFrame,
+) -> pd.DataFrame:
+    """Back-fill order_id/order_status/order_filled_count from trades into evaluations."""
+    for col in ("order_id", "order_status", "order_filled_count"):
+        if col not in evaluations_df.columns:
+            evaluations_df[col] = None
+
+    order_cols = ["snapshot_ts", "market_ticker", "order_id", "order_status", "order_filled_count"]
+    available = [c for c in order_cols if c in trades_df.columns]
+    if len(available) < 3:
+        return evaluations_df
+
+    order_map = trades_df[available].drop_duplicates(subset=["snapshot_ts", "market_ticker"])
+    evaluations_df = evaluations_df.merge(
+        order_map.rename(columns={
+            "order_id": "_order_id",
+            "order_status": "_order_status",
+            "order_filled_count": "_order_filled_count",
+        }),
+        on=["snapshot_ts", "market_ticker"],
+        how="left",
+    )
+    for col in ("order_id", "order_status", "order_filled_count"):
+        merged_col = f"_{col}"
+        if merged_col in evaluations_df.columns:
+            evaluations_df[col] = evaluations_df[merged_col].where(
+                evaluations_df[merged_col].notna(), evaluations_df[col]
+            )
+            evaluations_df = evaluations_df.drop(columns=[merged_col])
+    return evaluations_df
 
 
 def _resolve_event_date(row: dict[str, Any]) -> str | None:

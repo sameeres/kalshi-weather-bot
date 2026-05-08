@@ -1,9 +1,13 @@
 paper_climatology_monitor:
   strategy_name: climatology_or_below_yes_cheap_v1
   paper_only: true
+  # Set live_trading: true to place real Kalshi orders when take_paper_trade is true.
+  # Requires KALSHI_API_KEY_ID and KALSHI_PRIVATE_KEY_PATH in environment.
+  live_trading: false
   gate:
     contract_type: or_below
     chosen_side: "yes"
+    min_entry_price_cents: 10.0
     max_entry_price_cents: 25.0
   decision:
     day_window: 1
@@ -11,8 +15,21 @@ paper_climatology_monitor:
     contracts: 1
     fee_model: kalshi_standard_taker
     fee_per_contract: 0.0
-    min_net_edge: 0.05
+    min_net_edge: 0.15
     max_spread_cents: 2.0
+  # Risk controls for live order execution.
+  # These limits are enforced per calendar day and are checked before every order.
+  # They apply only when live_trading: true; paper mode records all qualifying trades.
+  execution:
+    # Spend at most this many dollars on a single trade. Contracts are sized
+    # dynamically: floor(max_trade_dollars / (entry_price_cents / 100)).
+    # At 10¢ ask this buys 50 contracts; at 25¢ ask it buys 20 contracts.
+    max_trade_dollars: 5.0
+    # Stop placing new orders once this many live orders have been placed today.
+    max_daily_trades: 3
+    # Stop placing new orders if the total committed today (orders placed × price)
+    # exceeds this amount. Acts as a redundant cap alongside max_daily_trades.
+    max_daily_exposure_dollars: 15.0
   capture:
     status: open
     include_orderbook: true

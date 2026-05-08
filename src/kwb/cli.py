@@ -14,6 +14,10 @@ from kwb.ingestion.nws_forecast import (
     NWSForecastIngestionError,
     fetch_nws_forecast_snapshots,
 )
+from kwb.ingestion.iem_historical_forecast import (
+    IEMHistoricalForecastError,
+    fetch_iem_historical_forecasts,
+)
 from kwb.ingestion.build_staging import build_staging_datasets
 from kwb.ingestion.validate_staging import check_climatology_baseline_readiness, validate_staging_datasets
 from kwb.ingestion.weather_history import ingest_weather_history_for_enabled_cities
@@ -541,6 +545,35 @@ def fetch_nws_forecast_snapshots_command(
     console.print(f"Saved NWS forecast snapshots: {outpath}")
 
 
+@data_app.command("fetch-iem-historical-forecasts")
+def fetch_iem_historical_forecasts_command(
+    start_date: str = typer.Option(..., help="Start event date (YYYY-MM-DD), inclusive."),
+    end_date: str = typer.Option(..., help="End event date (YYYY-MM-DD), inclusive."),
+    config_path: str = typer.Option("", help="Optional city config path override."),
+    output_dir: str = typer.Option("", help="Optional staging output directory override."),
+    append: bool = typer.Option(True, help="Append and dedupe against existing snapshot parquet."),
+) -> None:
+    """Backfill historical NWS forecast data for a date range using IEM AFOS archive.
+
+    Fetches Zone Forecast Products (ZFP) from Iowa State's text archive and
+    converts them into the same nws_forecast_hourly_snapshots.parquet format
+    used by the live NWS hourly ingestion.
+    """
+    try:
+        outpath = fetch_iem_historical_forecasts(
+            start_date=start_date,
+            end_date=end_date,
+            config_path=Path(config_path) if config_path else CONFIG_DIR / "cities.yml",
+            output_dir=Path(output_dir) if output_dir else None,
+            append=append,
+        )
+    except IEMHistoricalForecastError as exc:
+        console.print(f"[red]IEM historical forecast ingestion failed[/red]\n{exc}")
+        raise typer.Exit(code=1) from exc
+
+    console.print(f"Saved IEM historical forecast snapshots: {outpath}")
+
+
 @mart_app.command("backtest-dataset")
 def build_backtest_dataset_command(
     decision_time_local: str = typer.Option(..., help="Local decision time in HH:MM format."),
@@ -725,7 +758,7 @@ def run_forecast_distribution_backtest(
     output_dir: str = typer.Option("", help="Optional comparison output directory override."),
     min_edge: float = typer.Option(0.05, help="Minimum edge required to take a trade."),
     min_samples: int = typer.Option(30, help="Minimum lookback sample size required."),
-    min_price: float = typer.Option(0.0, help="Minimum entry price in cents."),
+    min_price: float = typer.Option(10.0, help="Minimum entry price in cents."),
     max_price: float = typer.Option(25.0, help="Maximum entry price in cents."),
     allow_no: bool = typer.Option(False, help="Also allow NO-side trades."),
     contracts: int = typer.Option(1, help="Contracts per selected trade."),
@@ -1003,7 +1036,7 @@ def run_forecast_distribution_research_command(
     min_lookback_samples: int = typer.Option(30, help="Minimum required historical samples to score a row."),
     min_edge: float = typer.Option(0.05, help="Minimum one-shot trade edge."),
     min_samples: int = typer.Option(30, help="Minimum one-shot lookback sample size."),
-    min_price: float = typer.Option(0.0, help="Minimum one-shot entry price in cents."),
+    min_price: float = typer.Option(10.0, help="Minimum one-shot entry price in cents."),
     max_price: float = typer.Option(25.0, help="Maximum one-shot entry price in cents."),
     allow_no: bool = typer.Option(False, help="Also allow NO-side trades when supported."),
     contracts: int = typer.Option(1, help="Contracts per selected trade."),

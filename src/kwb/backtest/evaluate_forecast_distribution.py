@@ -92,6 +92,14 @@ def evaluate_forecast_distribution_signals(
 
 
 def _build_joined_frame(climatology_df: pd.DataFrame, forecast_df: pd.DataFrame) -> pd.DataFrame:
+    # Normalize decision_ts to a consistent ISO string in both frames so the merge
+    # key dtype and format match regardless of how each scored parquet stored it.
+    for df in (climatology_df, forecast_df):
+        if "decision_ts" in df.columns:
+            df["decision_ts"] = (
+                pd.to_datetime(df["decision_ts"], utc=True, format="ISO8601")
+                .dt.strftime("%Y-%m-%dT%H:%M:%S+00:00")
+            )
     joined = climatology_df.merge(
         forecast_df,
         on=JOIN_KEYS,

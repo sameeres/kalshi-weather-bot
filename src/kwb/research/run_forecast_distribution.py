@@ -335,9 +335,9 @@ def _prepare_forecast_coverage_frame(df: pd.DataFrame) -> pd.DataFrame:
     prepared = df.copy()
     if prepared.empty:
         return prepared
-    prepared["snapshot_ts"] = pd.to_datetime(prepared["snapshot_ts"], utc=True, errors="coerce")
-    prepared["period_start_ts"] = pd.to_datetime(prepared["period_start_ts"], utc=True, errors="coerce")
-    prepared["period_end_ts"] = pd.to_datetime(prepared["period_end_ts"], utc=True, errors="coerce")
+    prepared["snapshot_ts"] = pd.to_datetime(prepared["snapshot_ts"], utc=True, format="ISO8601")
+    prepared["period_start_ts"] = pd.to_datetime(prepared["period_start_ts"], utc=True, format="ISO8601")
+    prepared["period_end_ts"] = pd.to_datetime(prepared["period_end_ts"], utc=True, format="ISO8601")
     prepared = prepared.loc[
         prepared["city_key"].notna()
         & prepared["snapshot_ts"].notna()

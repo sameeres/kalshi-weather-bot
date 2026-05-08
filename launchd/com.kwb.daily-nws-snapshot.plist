@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  com.kwb.daily-nws-snapshot
+  Fetches the morning NWS forecast snapshot at 9:15 AM ET every weekday.
+  Run `launchd/install.sh` to install and load this agent.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.kwb.daily-nws-snapshot</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>KWB_REPO_ROOT/scripts/fetch_nws_forecast_snapshots_manual.sh</string>
+  </array>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>ITERATIONS</key>
+    <string>1</string>
+    <key>PATH</key>
+    <string>/usr/local/bin:/usr/bin:/bin:/Library/Frameworks/Python.framework/Versions/3.14/bin</string>
+  </dict>
+
+  <!-- 9:15 AM ET = 14:15 UTC (EST) or 13:15 UTC (EDT).
+       Set to 14:15 UTC; acceptable for both offsets within the trading window. -->
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>14</integer>
+    <key>Minute</key>
+    <integer>15</integer>
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>KWB_REPO_ROOT/logs/nws_snapshot.log</string>
+  <key>StandardErrorPath</key>
+  <string>KWB_REPO_ROOT/logs/nws_snapshot.err</string>
+
+  <key>WorkingDirectory</key>
+  <string>KWB_REPO_ROOT</string>
+
+  <key>RunAtLoad</key>
+  <false/>
+</dict>
+</plist>

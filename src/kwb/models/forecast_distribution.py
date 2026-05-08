@@ -18,7 +18,7 @@ logger = get_logger(__name__)
 DEFAULT_BACKTEST_MART_PATH = SETTINGS_MARTS_DIR / DEFAULT_BACKTEST_DATASET_FILENAME
 DEFAULT_FORECAST_SNAPSHOTS_PATH = SETTINGS_STAGING_DIR / "nws_forecast_hourly_snapshots.parquet"
 DEFAULT_SCORED_FILENAME = "backtest_scored_forecast_distribution.parquet"
-DEFAULT_MODEL_NAME = "forecast_distribution_v1"
+DEFAULT_MODEL_NAME = "forecast_distribution_v2"
 
 REQUIRED_BACKTEST_COLUMNS = {
     "city_key",
@@ -137,10 +137,13 @@ def estimate_forecast_prob_yes(
     if distribution_sigma_f <= 0:
         raise ForecastDistributionModelError("distribution_sigma_f must be positive.")
 
-    forecast_anomaly_f = float(forecast_max_temp_f) - float(normal_tmax_f)
-    shifted_means = history_samples.astype(float) + forecast_anomaly_f
+    # Use the forecast temperature as a single Gaussian mean rather than shifting
+    # each historical sample (mixture model). The mixture approach blends in
+    # warm/cold-year historical echoes that dilute the forecast signal and cause
+    # severe overestimation of extreme-contract probabilities.
+    # The forecast IS the posterior mean; sigma represents day-of forecast error.
     probabilities = _bucket_probability_from_gaussian_mixture(
-        means=shifted_means,
+        means=np.array([float(forecast_max_temp_f)]),
         sigma=distribution_sigma_f,
         floor_strike=floor_strike,
         cap_strike=cap_strike,
@@ -359,9 +362,9 @@ def _prepare_history_frame(df: pd.DataFrame) -> pd.DataFrame:
 
 def _prepare_forecast_frame(df: pd.DataFrame) -> pd.DataFrame:
     prepared = df.copy()
-    prepared["snapshot_ts"] = pd.to_datetime(prepared["snapshot_ts"], utc=True, errors="coerce")
-    prepared["period_start_ts"] = pd.to_datetime(prepared["period_start_ts"], utc=True, errors="coerce")
-    prepared["period_end_ts"] = pd.to_datetime(prepared["period_end_ts"], utc=True, errors="coerce")
+    prepared["snapshot_ts"] = pd.to_datetime(prepared["snapshot_ts"], utc=True, format="ISO8601")
+    prepared["period_start_ts"] = pd.to_datetime(prepared["period_start_ts"], utc=True, format="ISO8601")
+    prepared["period_end_ts"] = pd.to_datetime(prepared["period_end_ts"], utc=True, format="ISO8601")
     invalid = prepared["snapshot_ts"].isna() | prepared["period_start_ts"].isna() | prepared["period_end_ts"].isna()
     if invalid.any():
         raise ForecastDistributionModelError("Forecast snapshots contain invalid timestamp values.")

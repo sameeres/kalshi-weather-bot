@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  com.kwb.daily-reconcile
+  Reconciles yesterday's paper/live trades at 7:30 AM ET every weekday.
+  Matches trades against settled weather observations and updates the cumulative scoreboard.
+  Run `launchd/install.sh` to install and load this agent.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.kwb.daily-reconcile</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>KWB_REPO_ROOT/scripts/reconcile_paper_monitor_latest.sh</string>
+  </array>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/usr/local/bin:/usr/bin:/bin:/Library/Frameworks/Python.framework/Versions/3.14/bin</string>
+  </dict>
+
+  <!-- 7:30 AM ET = 12:30 UTC (EST) or 11:30 UTC (EDT).
+       Set to 12:30 UTC. Settlement weather data is typically available by 7 AM ET. -->
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>12</integer>
+    <key>Minute</key>
+    <integer>30</integer>
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>KWB_REPO_ROOT/logs/reconcile.log</string>
+  <key>StandardErrorPath</key>
+  <string>KWB_REPO_ROOT/logs/reconcile.err</string>
+
+  <key>WorkingDirectory</key>
+  <string>KWB_REPO_ROOT</string>
+
+  <key>RunAtLoad</key>
+  <false/>
+</dict>
+</plist>

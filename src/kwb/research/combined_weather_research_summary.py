@@ -10,7 +10,7 @@ import pandas as pd
 from kwb.settings import MARTS_DIR
 
 DEFAULT_PAPER_ROOT = MARTS_DIR / "paper_trading"
-DEFAULT_FORECAST_ROOT = MARTS_DIR / "forecast_distribution_manual"
+DEFAULT_FORECAST_ROOT = MARTS_DIR / "forecast_distribution_runs"
 DEFAULT_SUMMARY_PATH = MARTS_DIR / "combined_weather_research_summary_latest.md"
 
 

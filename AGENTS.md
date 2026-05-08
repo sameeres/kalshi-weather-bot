@@ -15,18 +15,24 @@ Build an algorithm that:
 
 ## Current stage
 
-This project is in the **research / MVP** stage.
+This project has completed the research / MVP stage and is moving into **live trading**.
 
-We are **not** building a production auto-trader yet.
-We are **not** placing live orders yet.
-We are **not** optimizing across many cities yet.
+The validated strategy:
+- Cities: NYC (KNYC) + Chicago (KMDW)
+- Contract type: `or_below YES`
+- Entry price gate: **10–25 cents** (10¢ floor narrows out miscalibrated extreme-cheap contracts)
+- Model: `forecast_distribution_v2` (single Gaussian on NWS forecast temperature, σ=3°F)
+- Decision time: 10:00 AM local for each city
+- Backtest PnL (10–25¢ window, 3 folds all positive):
+  - `climatology_only`: 10 trades, 40% hit rate, +$2.22
+  - `forecast_only`: 14 trades, 43% hit rate, +$3.40
+  - `intersection`: 9 trades, 44% hit rate, +$2.36
 
-The immediate focus is:
-- 3 cities maximum
-- daily high temperature markets only
-- one decision time per day
-- backtesting first
-- exact settlement mapping first
+Live trading is controlled by `live_trading: false/true` in `configs/paper_trading.yml`.
+When disabled, the system runs in paper-only mode (logs evaluations but does not place orders).
+When enabled, real Kalshi orders are placed via `KalshiAuthClient` using RSA-PSS credentials.
+
+Scheduling is managed by macOS launchd agents in `launchd/`. Install with `bash launchd/install.sh`.
 
 ## Non-negotiable rules
 
@@ -157,5 +163,10 @@ When responding with a plan or a commit summary:
 
 Unless the user says otherwise, the highest-priority task is:
 
-**Implement `src/kwb/ingestion/kalshi_events.py` end-to-end and wire settlement-source fields into `configs/cities.yml` / staging outputs so the repo can discover and store authoritative settlement metadata for enabled cities.**
+**Activate live trading for the first real day:**
+1. Copy `.env.example` → `.env` and fill in `KALSHI_API_KEY_ID` and `KALSHI_PRIVATE_KEY_PATH`.
+2. Verify credentials: `python3 -c "from kwb.clients.kalshi_auth import build_auth_client_from_env; c = build_auth_client_from_env(); print(c.get_balance())"`
+3. Set `live_trading: true` in `configs/paper_trading.yml`.
+4. Run `bash launchd/install.sh` to start the daily schedule.
+5. Monitor `logs/live_monitor.log` on the first trading day.
 

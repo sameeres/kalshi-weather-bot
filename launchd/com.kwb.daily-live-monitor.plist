@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  com.kwb.daily-live-monitor
+  Runs the paper/live climatology monitor at 9:50 AM ET every weekday.
+  Captures Kalshi quotes around the 10:00 AM local decision time for NYC + Chicago,
+  evaluates the model, and (if live_trading: true in paper_trading.yml) places orders.
+  Run `launchd/install.sh` to install and load this agent.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.kwb.daily-live-monitor</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>KWB_REPO_ROOT/scripts/run_live_monitor.sh</string>
+  </array>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/usr/local/bin:/usr/bin:/bin:/Library/Frameworks/Python.framework/Versions/3.14/bin</string>
+  </dict>
+
+  <!-- 9:50 AM ET = 14:50 UTC (EST) or 13:50 UTC (EDT).
+       Set to 14:50 UTC to anchor on the EST offset. The monitor runs for
+       ~30 minutes of 1-minute polls, covering 10:00–10:30 AM ET comfortably. -->
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>14</integer>
+    <key>Minute</key>
+    <integer>50</integer>
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>KWB_REPO_ROOT/logs/live_monitor.log</string>
+  <key>StandardErrorPath</key>
+  <string>KWB_REPO_ROOT/logs/live_monitor.err</string>
+
+  <key>WorkingDirectory</key>
+  <string>KWB_REPO_ROOT</string>
+
+  <key>RunAtLoad</key>
+  <false/>
+</dict>
+</plist>
